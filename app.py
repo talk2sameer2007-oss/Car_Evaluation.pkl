@@ -1,142 +1,213 @@
-# app.py
-
-import os
-import joblib
 import gradio as gr
+import joblib
+import pandas as pd
 
-# ==========================================================
-# Load the trained model
-# ==========================================================
-# --- CODE BLOCK: LOAD XGBOOST MODEL ---
-try:
-    deployed_xgb = joblib.load("Car_Evaluation.pkl")
-    print("Model loaded successfully!")
-except Exception as e:
-    print(f"Warning: Model not found or error loading. {e}")
-    deployed_xgb = None
-# --------------------------------------
+# Load Model
+model = joblib.load("Car_Evaluation.pkl")
 
-# ==========================================================
-# Prediction Function with Bulletproof Error Handling
-# ==========================================================
-# --- CODE BLOCK: 6-FEATURE PREDICTION LOGIC ---
-def predict_car_safety(
-    buying_price,
-    maintenance_cost,
-    number_of_doors,
-    number_of_persons,
-    lug_boot,
-    safety
-):
-    # Capture inputs from Gradio
-    values = [
-        buying_price, maintenance_cost, number_of_doors, 
-        number_of_persons, lug_boot, safety
-    ]
 
-    # 1. Empty/None input check (Bulletproof catch if user skips a dropdown)
-    if any(v is None or str(v).strip() == "" for v in values):
-        return "❌ Please select an option for all input fields."
+def predict_car(buying_price, maintenance_cost, number_of_doors,
+                number_of_persons, lug_boot, safety):
 
-    # 2. Type casting to integers
-    try:
-        buying_price = int(buying_price)
-        maintenance_cost = int(maintenance_cost)
-        number_of_doors = int(number_of_doors)
-        number_of_persons = int(number_of_persons)
-        lug_boot = int(lug_boot)
-        safety = int(safety)
-    except (ValueError, TypeError):
-        return "❌ Internal Error: Invalid data format received."
+    data = pd.DataFrame({
+        "buying price": [buying_price],
+        "maintenance cost": [maintenance_cost],
+        "number of doors": [number_of_doors],
+        "number of persons": [number_of_persons],
+        "lug_boot": [lug_boot],
+        "safety": [safety]
+    })
 
-    # 3. Model execution
-    if deployed_xgb is None:
-        return "❌ Model failed to load. Please check your .pkl file."
+    prediction = model.predict(data)[0]
 
-    try:
-        # Array strictly ordered to match the X dataframe provided
-        input_data = [[
+    return f"🚗 Car Evaluation Result: {prediction}"
+
+
+css = """
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+*{
+    font-family:'Poppins',sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#050816,#0b132b,#101c3d);
+    background-attachment:fixed;
+}
+
+.gradio-container{
+    max-width:1250px !important;
+    margin:auto;
+    padding:20px;
+}
+
+.gr-block,
+.gr-box{
+    background:rgba(18,28,55,0.75) !important;
+    backdrop-filter:blur(15px);
+    border:1px solid rgba(0,180,255,.25);
+    border-radius:20px !important;
+    box-shadow:
+    0 0 20px rgba(0,140,255,.15),
+    inset 0 0 8px rgba(255,255,255,.04);
+}
+
+label{
+    color:#ffffff !important;
+    font-weight:600 !important;
+}
+
+input,
+textarea,
+select{
+    background:#111c36 !important;
+    color:white !important;
+    border:1px solid #1da1f2 !important;
+    border-radius:12px !important;
+}
+
+button{
+    background:linear-gradient(90deg,#00c6ff,#0072ff) !important;
+    color:white !important;
+    border:none !important;
+    border-radius:14px !important;
+    font-size:18px !important;
+    font-weight:700 !important;
+    padding:14px !important;
+    transition:.35s;
+}
+
+button:hover{
+    transform:translateY(-3px);
+    box-shadow:
+    0 0 25px #00bfff,
+    0 0 45px rgba(0,191,255,.5);
+}
+
+textarea{
+    font-size:18px !important;
+    font-weight:bold;
+}
+
+footer{
+    visibility:hidden;
+}
+
+h1,h2,h3{
+    color:white !important;
+}
+"""
+
+with gr.Blocks(css=css, title="Car Evaluation System") as demo:
+
+    gr.Markdown("""
+    <div style="
+    background:linear-gradient(90deg,#001F3F,#0059B3,#0099FF);
+    padding:30px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 0 25px rgba(0,170,255,.45);
+    ">
+    <h1 style="color:white;font-size:42px;">
+    🚘 CAR EVALUATION SYSTEM
+    </h1>
+    <p style="font-size:20px;color:#E8F8FF;">
+    Luxury Automobile Dashboard • AI Powered Vehicle Classification
+    </p>
+    </div>
+    """)
+
+    with gr.Row():
+
+        with gr.Column():
+            gr.Markdown("## 🚗 Vehicle Specifications")
+
+            buying_price = gr.Dropdown(
+                ["low", "med", "high", "vhigh"],
+                label="Buying Price",
+                value="med"
+            )
+
+            maintenance_cost = gr.Dropdown(
+                ["low", "med", "high", "vhigh"],
+                label="Maintenance Cost",
+                value="med"
+            )
+
+            number_of_doors = gr.Dropdown(
+                ["2", "3", "4", "5more"],
+                label="Number of Doors",
+                value="4"
+            )
+
+            number_of_persons = gr.Dropdown(
+                ["2", "4", "more"],
+                label="Number of Persons",
+                value="4"
+            )
+
+            lug_boot = gr.Dropdown(
+                ["small", "med", "big"],
+                label="Luggage Boot Size",
+                value="med"
+            )
+
+            safety = gr.Dropdown(
+                ["low", "med", "high"],
+                label="Safety",
+                value="high"
+            )
+
+        with gr.Column():
+            gr.Markdown("## 📊 AI Evaluation Dashboard")
+
+            output = gr.Textbox(
+                label="🏁 Prediction Result",
+                lines=4
+            )
+
+    predict_btn = gr.Button(
+        "🚘 Evaluate Vehicle",
+        variant="primary"
+    )
+
+    predict_btn.click(
+        predict_car,
+        inputs=[
             buying_price,
             maintenance_cost,
             number_of_doors,
             number_of_persons,
             lug_boot,
             safety
-        ]]
-
-        prediction = deployed_xgb.predict(input_data)
-
-        # Assuming standard label encoding for the 'decision' target
-        # (Modify these return strings if your dataset used different target labels like unacc, acc, good, vgood)
-        result_map = {
-            0: "Unacceptable (unacc)",
-            1: "Acceptable (acc)",
-            2: "Good (good)",
-            3: "Very Good (vgood)"
-        }
-        
-        # Fallback to the raw prediction if it doesn't match 0-3
-        final_decision = result_map.get(prediction[0], f"Class {prediction[0]}")
-
-        return f"🚙 Evaluation Result\n\nCar Safety Decision: {final_decision}"
-
-    except Exception as e:
-        return f"❌ Prediction failed.\n\nError: {str(e)}"
-# ----------------------------------------------
-
-# ==========================================================
-# Description & Footer
-# ==========================================================
-# --- CODE BLOCK: BRANDING & UI TEXT ---
-DESCRIPTION = """
-# 🚙 Car Safety & Evaluation System
-
-This application evaluates a vehicle's overall acceptability based on its physical attributes, pricing, and safety metrics using a trained **XGBoost Machine Learning Model**.
-
-Select the vehicle's specifications below to run the assessment.
-"""
-
-developer_info = """
-### About the Developer
-**Created by:** Sameer
-
----
-### 🛠️ Tools & Technologies Used
-* **Machine Learning:** XGBoost Classifier
-* **Web Framework:** Gradio
-* **Language:** Python
-* **Deployment:** Render
-"""
-# --------------------------------------
-
-# ==========================================================
-# Interface Setup
-# ==========================================================
-# --- CODE BLOCK: SAFE DROPDOWN INPUTS ---
-interface = gr.Interface(
-    fn=predict_car_safety,
-    inputs=[
-        gr.Dropdown(choices=[("Low", 0), ("Medium", 1), ("High", 2), ("Very High", 3)], label="Buying Price"),
-        gr.Dropdown(choices=[("Low", 0), ("Medium", 1), ("High", 2), ("Very High", 3)], label="Maintenance Cost"),
-        gr.Dropdown(choices=[("2", 2), ("3", 3), ("4", 4), ("5 or More", 5)], label="Number of Doors"),
-        gr.Dropdown(choices=[("2", 2), ("4", 4), ("More", 5)], label="Number of Persons"),
-        gr.Dropdown(choices=[("Small", 0), ("Medium", 1), ("Big", 2)], label="Luggage Boot Size"),
-        gr.Dropdown(choices=[("Low", 0), ("Medium", 1), ("High", 2)], label="Safety Rating"),
-    ],
-    outputs=gr.Textbox(label="Assessment Result", lines=4),
-    title="🚙 Car Safety Evaluation System",
-    description=DESCRIPTION,
-    article=developer_info
-)
-# ----------------------------------------
-
-# ==========================================================
-# Launch Configuration
-# ==========================================================
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    print(f"Starting Gradio server on 0.0.0.0:{port}...")
-    interface.launch(
-        server_name="0.0.0.0",
-        server_port=port,
+        ],
+        outputs=output
     )
+
+    gr.Examples(
+        examples=[
+            ["low", "low", "4", "more", "big", "high"],
+            ["med", "med", "4", "4", "med", "med"],
+            ["high", "high", "2", "2", "small", "low"],
+            ["vhigh", "vhigh", "2", "2", "small", "low"]
+        ],
+        inputs=[
+            buying_price,
+            maintenance_cost,
+            number_of_doors,
+            number_of_persons,
+            lug_boot,
+            safety
+        ]
+    )
+
+    gr.Markdown("""
+    ---
+    <div style="text-align:center;color:#A5CFFF">
+    <h3>🚗 Developed by Sameer</h3>
+    <p><b>Roll No. 241020</b></p>
+    <p>Machine Learning Project</p>
+    </div>
+    """)
+
+demo.launch(server_name="0.0.0.0", server_port=7860)
