@@ -3,43 +3,47 @@ import joblib
 import gradio as gr
 
 # ==========================================================
-# 1. Load Trained Machine Learning Model
+# Load Trained Machine Learning Model
 # ==========================================================
 MODEL_PATH = "Car_Evaluation.pkl"
 
 try:
     deployed_xgb = joblib.load(MODEL_PATH)
-    print("✅ Model loaded successfully!")
+    print("Model loaded successfully!")
 except Exception as e:
-    print(f"⚠️ Warning: Model loading failed ({e}). Running in offline preview mode.")
+    print(f"Warning: Model not found or error loading ({e}). Running UI mode.")
     deployed_xgb = None
 
 
 # ==========================================================
-# 2. Prediction & Diagnostics Logic
+# Core Prediction & Infotainment UI Diagnostic Logic
 # ==========================================================
-def run_vehicle_assessment(buying_price, maintenance_cost, number_of_doors, number_of_persons, lug_boot, safety):
-    # Sanity checks
+def predict_car_safety(buying_price, maintenance_cost, number_of_doors, number_of_persons, lug_boot, safety):
     inputs = [buying_price, maintenance_cost, number_of_doors, number_of_persons, lug_boot, safety]
+    
+    # 1. Validation check
     if any(v is None for v in inputs):
         return """
-        <div class="result-card error-card">
-            <h3>⚠️ INCOMPLETE SPECIFICATIONS</h3>
-            <p>Please select valid options for all vehicle parameters before initiating telemetry analysis.</p>
+        <div class="info-card alert-card">
+            <div class="card-status">⚠️ SYSTEM WARNING</div>
+            <div class="card-title">INCOMPLETE PARAMETERS</div>
+            <p>Please configure all vehicle parameters on the left console to run safety evaluation.</p>
         </div>
         """
 
+    # 2. Model check
     if deployed_xgb is None:
         return """
-        <div class="result-card error-card">
-            <h3>🔴 SYSTEM OFFLINE</h3>
-            <p>Model file (<code>Car_Evaluation.pkl</code>) not detected. Please verify your deployment assets.</p>
+        <div class="info-card alert-card">
+            <div class="card-status">🔴 OFFLINE</div>
+            <div class="card-title">MODEL NOT DETECTED</div>
+            <p>Car_Evaluation.pkl file is missing or failed to load.</p>
         </div>
         """
 
     try:
-        # Cast inputs to integers
-        feature_vector = [[
+        # Cast inputs
+        feature_data = [[
             int(buying_price),
             int(maintenance_cost),
             int(number_of_doors),
@@ -48,126 +52,164 @@ def run_vehicle_assessment(buying_price, maintenance_cost, number_of_doors, numb
             int(safety)
         ]]
 
-        prediction = deployed_xgb.predict(feature_vector)[0]
+        prediction = deployed_xgb.predict(feature_data)[0]
 
-        # Detailed UI mapping based on model outcome
-        outcome_config = {
+        # Dashboard Card Mapping
+        card_configs = {
             0: {
                 "title": "UNACCEPTABLE",
-                "class": "status-unacc",
-                "badge": "🔴 CLASS 0",
-                "desc": "Vehicle fails basic standard requirements for safety, cost-to-value ratio, or seating utility."
+                "badge": "CLASS 0 - REJECTED",
+                "color": "#ff3b30",
+                "glow": "rgba(255, 59, 48, 0.25)",
+                "desc": "Vehicle fails key utility or safety baselines. Not recommended for deployment.",
+                "icon": "⛔"
             },
             1: {
                 "title": "ACCEPTABLE",
-                "class": "status-acc",
-                "badge": "🟡 CLASS 1",
-                "desc": "Vehicle meets baseline criteria. Fits practical urban needs with average safety and cost efficiency."
+                "badge": "CLASS 1 - PASS",
+                "color": "#ffcc00",
+                "glow": "rgba(255, 204, 0, 0.25)",
+                "desc": "Meets baseline operational standards with standard safety and cost metrics.",
+                "icon": "⚠️"
             },
             2: {
                 "title": "GOOD",
-                "class": "status-good",
-                "badge": "🔵 CLASS 2",
-                "desc": "High quality evaluation score. Strong performance metrics, optimal sizing, and sound safety rating."
+                "color": "#30d158",
+                "badge": "CLASS 2 - RECOMMENDED",
+                "glow": "rgba(48, 209, 88, 0.25)",
+                "desc": "Strong evaluation index. High cost efficiency and optimal seating utility.",
+                "icon": "✅"
             },
             3: {
                 "title": "VERY GOOD",
-                "class": "status-vgood",
-                "badge": "🟢 CLASS 3",
-                "desc": "Premium tier rating! Outstanding safety compliance, spacious boot capacity, and high cost-efficiency."
+                "badge": "CLASS 3 - OPTIMAL",
+                "color": "#0a84ff",
+                "glow": "rgba(10, 132, 255, 0.35)",
+                "desc": "Premium score! Superior safety ratings, spacious boot volume, and top value.",
+                "icon": "⚡"
             }
         }
 
-        res = outcome_config.get(prediction, {
+        config = card_configs.get(prediction, {
             "title": f"CLASS {prediction}",
-            "class": "status-good",
-            "badge": "⚙️ UNMAPPED",
-            "desc": "Custom outcome generated by ML model pipeline."
+            "badge": "CUSTOM RESULT",
+            "color": "#5e5ce6",
+            "glow": "rgba(94, 92, 230, 0.25)",
+            "desc": "Evaluation generated by machine learning pipeline.",
+            "icon": "📊"
         })
 
-        # Return rich HTML output for the HUD display
         return f"""
-        <div class="result-card {res['class']}">
-            <div class="result-header">
-                <span class="badge">{res['badge']}</span>
-                <span class="timestamp">TELEMETRY DIAGNOSTIC</span>
+        <div class="info-card result-display" style="border-left: 4px solid {config['color']}; box-shadow: 0 8px 30px {config['glow']};">
+            <div class="card-header-row">
+                <span class="badge-pill" style="background: {config['color']}; color: #000;">{config['badge']}</span>
+                <span class="system-time">TELEMETRY DIAGNOSTIC</span>
             </div>
-            <h2 class="result-title">{res['title']}</h2>
-            <p class="result-desc">{res['desc']}</p>
-            <div class="telemetry-bar">
-                <div class="bar-fill"></div>
+            <div class="result-title-row">
+                <span class="result-icon">{config['icon']}</span>
+                <h2 style="color: {config['color']}; margin: 0;">{config['title']}</h2>
+            </div>
+            <p class="result-body-text">{config['desc']}</p>
+            <div class="telemetry-grid">
+                <div class="metric-item">
+                    <span class="metric-label">SAFETY LEVEL</span>
+                    <span class="metric-val">{["LOW", "MEDIUM", "HIGH"][int(safety)]}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">BOOT CAPACITY</span>
+                    <span class="metric-val">{["SMALL", "MEDIUM", "BIG"][int(lug_boot)]}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">SEATING</span>
+                    <span class="metric-val">{number_of_persons} SEATS</span>
+                </div>
             </div>
         </div>
         """
 
     except Exception as e:
         return f"""
-        <div class="result-card error-card">
-            <h3>❌ EVALUATION ERROR</h3>
-            <p>An unexpected error occurred during inference: <code>{str(e)}</code></p>
+        <div class="info-card alert-card">
+            <div class="card-status">❌ EVALUATION FAILURE</div>
+            <p>Error during analysis: <code>{str(e)}</code></p>
         </div>
         """
 
 
 # ==========================================================
-# 3. Custom BMW / Hot Wheels Dark Telemetry Styling (CSS)
+# Tesla/EV Infotainment System Styling (Modern Dark Cockpit)
 # ==========================================================
-CUSTOM_CSS = """
-/* Theme Colors & Dark Garage Styling */
+INFOTAINMENT_CSS = """
 :root {
-    --bg-dark: #090c10;
-    --panel-bg: rgba(18, 24, 38, 0.75);
-    --accent-blue: #00d2ff;
-    --accent-red: #ff2a5f;
-    --accent-glow: rgba(0, 210, 255, 0.4);
-    --border-color: rgba(255, 255, 255, 0.1);
+    --bg-dark: #0b0e14;
+    --card-bg: #151a24;
+    --card-hover: #1c2230;
+    --accent-blue: #0a84ff;
+    --accent-cyan: #30d158;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --text-main: #f0f4f8;
+    --text-muted: #8e9aaf;
 }
 
 body, .gradio-container {
     background-color: var(--bg-dark) !important;
-    font-family: 'Orbitron', 'Inter', -apple-system, sans-serif;
-    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;
+    color: var(--text-main) !important;
 }
 
-/* Header Banner Styling */
-.hero-header {
-    background: linear-gradient(135deg, rgba(20, 26, 40, 0.9) 0%, rgba(10, 12, 18, 0.95) 100%),
-                url('https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=1200&auto=format&fit=crop');
-    background-size: cover;
-    background-position: center;
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 30px;
+/* Infotainment Dashboard Header */
+.top-nav-bar {
+    background: #11151e;
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 18px 28px;
     margin-bottom: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
-.hero-header h1 {
-    font-size: 2.2rem;
+.top-title {
+    font-size: 1.35rem;
     font-weight: 800;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-    background: linear-gradient(90deg, #ffffff, var(--accent-blue));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    letter-spacing: 1.5px;
+    color: #ffffff;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.hero-header p {
-    color: #94a3b8;
-    font-size: 1.0rem;
-    max-width: 650px;
-    margin: 0;
+.status-pills {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 
-/* Control Panel Inputs */
-.panel-box {
-    background: var(--panel-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 20px;
-    backdrop-filter: blur(12px);
+.pill {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.pill-active {
+    color: var(--accent-cyan);
+    border-color: rgba(48, 209, 88, 0.3);
+    background: rgba(48, 209, 88, 0.08);
+}
+
+/* Input Cards & Widget Layout */
+.widget-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
 }
 
 .gr-form, .gr-box {
@@ -175,197 +217,240 @@ body, .gradio-container {
     border: none !important;
 }
 
-/* Run Diagnostics Action Button */
-.action-btn {
-    background: linear-gradient(90deg, #0052d4, #4364f7, #6fb1fc) !important;
-    border: none !important;
+.gr-dropdown {
+    background: #10141c !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
     color: white !important;
+}
+
+/* Action Button - Infotainment Pill Style */
+.eval-btn {
+    background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 1rem !important;
     font-weight: 700 !important;
-    font-size: 1.1rem !important;
     letter-spacing: 1px !important;
-    padding: 14px !important;
-    border-radius: 8px !important;
-    box-shadow: 0 0 20px var(--accent-glow) !important;
-    transition: all 0.3s ease !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 8px 25px rgba(10, 132, 255, 0.35) !important;
+    transition: all 0.2s ease !important;
 }
 
-.action-btn:hover {
+.eval-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px rgba(0, 210, 255, 0.7) !important;
+    box-shadow: 0 12px 30px rgba(10, 132, 255, 0.5) !important;
 }
 
-/* Diagnostic Output Cards */
-.result-card {
-    border-radius: 12px;
-    padding: 25px;
-    margin-top: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    animation: fadeIn 0.4s ease-in-out;
+/* Result Cards */
+.info-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid var(--border-subtle);
 }
 
-.result-header {
+.card-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 15px;
 }
 
-.badge {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-.timestamp {
+.badge-pill {
+    padding: 5px 12px;
+    border-radius: 12px;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.system-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
     letter-spacing: 1px;
 }
 
-.result-title {
-    font-size: 2rem;
-    font-weight: 900;
-    margin: 10px 0;
-    letter-spacing: 1.5px;
+.result-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
-.result-desc {
+.result-icon {
+    font-size: 2rem;
+}
+
+.result-body-text {
+    color: var(--text-muted);
     font-size: 0.95rem;
     line-height: 1.5;
-    opacity: 0.9;
+    margin-bottom: 20px;
 }
 
-/* Dynamic Outcome Card Color Themes */
-.status-unacc {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(153, 27, 27, 0.4));
-    border: 1px solid #ef4444;
-    color: #fca5a5;
+.telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-subtle);
 }
 
-.status-acc {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(180, 83, 9, 0.4));
-    border: 1px solid #f59e0b;
-    color: #fde68a;
+.metric-item {
+    display: flex;
+    flex-direction: column;
 }
 
-.status-good {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(29, 78, 216, 0.4));
-    border: 1px solid #3b82f6;
-    color: #bfdbfe;
+.metric-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
 }
 
-.status-vgood {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(4, 120, 87, 0.4));
-    border: 1px solid #10b981;
-    color: #a7f3d0;
+.metric-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-top: 2px;
 }
 
-.error-card {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid #ef4444;
-    color: #fca5a5;
+.alert-card {
+    border-left: 4px solid #ff3b30;
+    color: #ff8882;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.card-status {
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+/* Footer UI */
+.cockpit-footer {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding-top: 15px;
+    border-top: 1px solid var(--border-subtle);
 }
 """
 
 
 # ==========================================================
-# 4. Modern Blocks UI Layout
+# Gradio UI Cockpit Interface Construction
 # ==========================================================
-with gr.Blocks(title="BMW Telemetry | Car Evaluation System", css=CUSTOM_CSS) as demo:
+with gr.Blocks(title="Car Safety & Evaluation System", css=INFOTAINMENT_CSS) as demo:
 
-    # Hero Header Section
+    # TOP NAVIGATION BAR (Dashboard Header)
     gr.HTML(
         """
-        <div class="hero-header">
-            <h1>🏎️ M-PERFORMANCE EVALUATOR</h1>
-            <p>Advanced XGBoost Vehicle Evaluation Engine. Configure physical metrics and safety ratings below to simulate vehicle acceptability metrics.</p>
+        <div class="top-nav-bar">
+            <div class="top-title">
+                <span>🚘</span> CAR SAFETY AND EVALUATION PREDICTION SYSTEM
+            </div>
+            <div class="status-pills">
+                <span class="pill pill-active">● SYSTEM READY</span>
+                <span class="pill">XGBoost Engine</span>
+                <span class="pill">v2.4 HUD</span>
+            </div>
         </div>
         """
     )
 
     with gr.Row():
-        # Left Column: Configuration Controls
-        with gr.Column(scale=6):
-            with gr.Group():
-                gr.Markdown("### 🛠️ **1. Cost & Valuations**")
-                with gr.Row():
-                    buying_price = gr.Dropdown(
-                        choices=[("Low", 0), ("Medium", 1), ("High", 2), ("Very High", 3)],
-                        label="Buying Price Tier",
-                        value=1
-                    )
-                    maintenance_cost = gr.Dropdown(
-                        choices=[("Low", 0), ("Medium", 1), ("High", 2), ("Very High", 3)],
-                        label="Maintenance Cost Tier",
-                        value=1
-                    )
+        # LEFT CONSOLE: Vehicle Specs & Controls
+        with gr.Column(scale=6, elem_classes=["widget-card"]):
+            gr.Markdown("#### 🎛️ **Vehicle Parameters Console**")
 
-                gr.Markdown("### 🚗 **2. Chassis & Capacity**")
-                with gr.Row():
-                    number_of_doors = gr.Dropdown(
-                        choices=[("2 Doors", 2), ("3 Doors", 3), ("4 Doors", 4), ("5 or More", 5)],
-                        label="Door Count",
-                        value=4
-                    )
-                    number_of_persons = gr.Dropdown(
-                        choices=[("2 Persons", 2), ("4 Persons", 4), ("5+ Persons", 5)],
-                        label="Passenger Capacity",
-                        value=4
-                    )
+            with gr.Row():
+                buying_price = gr.Dropdown(
+                    choices=[("Low", 0), ("Medium", 1), ("High", 2), ("Very High", 3)],
+                    label="Buying Price Tier",
+                    value=1
+                )
+                maintenance_cost = gr.Dropdown(
+                    choices=[("Low", 0), ("Medium", 1), ("High", 2), ("Very High", 3)],
+                    label="Maintenance Cost Tier",
+                    value=1
+                )
 
-                gr.Markdown("### 🛡️ **3. Utility & Safety Standard**")
-                with gr.Row():
-                    lug_boot = gr.Dropdown(
-                        choices=[("Small", 0), ("Medium", 1), ("Big", 2)],
-                        label="Luggage Boot Size",
-                        value=1
-                    )
-                    safety = gr.Dropdown(
-                        choices=[("Low Safety", 0), ("Medium Safety", 1), ("High Safety", 2)],
-                        label="Safety Assessment Rating",
-                        value=2
-                    )
+            with gr.Row():
+                number_of_doors = gr.Dropdown(
+                    choices=[("2 Doors", 2), ("3 Doors", 3), ("4 Doors", 4), ("5+ Doors", 5)],
+                    label="Door Count",
+                    value=4
+                )
+                number_of_persons = gr.Dropdown(
+                    choices=[("2 Capacity", 2), ("4 Capacity", 4), ("5+ Capacity", 5)],
+                    label="Seating Capacity",
+                    value=4
+                )
 
-                btn_eval = gr.Button("RUN TELEMETRY DIAGNOSTIC ⚡", elem_classes=["action-btn"])
+            with gr.Row():
+                lug_boot = gr.Dropdown(
+                    choices=[("Small", 0), ("Medium", 1), ("Big", 2)],
+                    label="Boot Luggage Space",
+                    value=1
+                )
+                safety = gr.Dropdown(
+                    choices=[("Low", 0), ("Medium", 1), ("High", 2)],
+                    label="Safety Rating Standard",
+                    value=2
+                )
 
-        # Right Column: Diagnostic Result Cockpit
+            btn_evaluate = gr.Button("RUN SAFETY ANALYSIS ⚡", elem_classes=["eval-btn"])
+
+        # RIGHT DISPLAY: Infotainment Diagnostics HUD
         with gr.Column(scale=5):
-            gr.Markdown("### 📊 **Diagnostic HUD**")
-            output_display = gr.HTML(
-                value="""
-                <div class="result-card" style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2);">
-                    <div class="result-header">
-                        <span class="badge" style="color:#aaa;">STANDBY</span>
-                    </div>
-                    <h3 style="color:#64748b; margin: 15px 0;">SYSTEM READY</h3>
-                    <p style="color:#64748b; font-size:0.9rem;">Select vehicle specifications on the left panel and click <b>RUN TELEMETRY DIAGNOSTIC</b> to evaluate vehicle class.</p>
+            gr.Markdown("#### 🖥️ **Cockpit Diagnostic Telemetry**")
+
+            # Vehicle Graphic Display Card
+            gr.HTML(
+                """
+                <div class="info-card" style="margin-bottom: 15px; text-align: center; padding: 18px;">
+                    <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=800&auto=format&fit=crop" 
+                         alt="Vehicle Telemetry Visual" 
+                         style="width: 100%; max-height: 160px; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);"/>
                 </div>
                 """
             )
 
-    # Developer Metadata Footer
+            # Interactive Output Display Widget
+            output_hud = gr.HTML(
+                value="""
+                <div class="info-card" style="border: 1px dashed rgba(255,255,255,0.15);">
+                    <div class="card-header-row">
+                        <span class="badge-pill" style="background: rgba(255,255,255,0.1); color: #aaa;">STANDBY</span>
+                        <span class="system-time">HUD ACTIVE</span>
+                    </div>
+                    <div class="result-title-row">
+                        <span class="result-icon">📡</span>
+                        <h3 style="color: #8e9aaf; margin: 0;">AWAITING TELEMETRY</h3>
+                    </div>
+                    <p class="result-body-text">Configure vehicle attributes on the left panel and trigger diagnostic run to evaluate vehicle safety index.</p>
+                </div>
+                """
+            )
+
+    # FOOTER BAR
     gr.HTML(
         """
-        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; font-size: 0.85rem; color: #64748b;">
-            <b>Developer:</b> Sameer &nbsp;|&nbsp; 
-            <b>Engine:</b> XGBoost Classifier &nbsp;|&nbsp; 
-            <b>UI Framework:</b> Gradio Blocks &nbsp;|&nbsp; 
-            <b>Target Platform:</b> Render
+        <div class="cockpit-footer">
+            Developer: <b>Sameer</b> &nbsp;|&nbsp; 
+            Machine Learning Engine: <b>XGBoost Classifier</b> &nbsp;|&nbsp; 
+            Framework: <b>Gradio Infotainment Cockpit</b>
         </div>
         """
     )
 
-    # Set up button click handler
-    btn_eval.click(
-        fn=run_vehicle_assessment,
+    # Bind execution event
+    btn_evaluate.click(
+        fn=predict_car_safety,
         inputs=[
             buying_price,
             maintenance_cost,
@@ -374,16 +459,16 @@ with gr.Blocks(title="BMW Telemetry | Car Evaluation System", css=CUSTOM_CSS) as
             lug_boot,
             safety
         ],
-        outputs=output_display
+        outputs=output_hud
     )
 
 
 # ==========================================================
-# 5. Server Launch Configuration
+# Render Launch Setup
 # ==========================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Starting BMW Telemetry UI on port {port}...")
+    print(f"Starting Car Evaluation Dashboard on port {port}...")
     demo.launch(
         server_name="0.0.0.0",
         server_port=port
