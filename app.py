@@ -3,7 +3,6 @@ import joblib
 import pandas as pd
 from datetime import datetime
 import plotly.graph_objects as go
-import plotly.express as px
 import gradio as gr
 
 # ==========================================================
@@ -18,7 +17,7 @@ except Exception as e:
     print(f"⚠️ Note: {e}. Running in simulation fallback mode.")
     deployed_xgb = None
 
-# Mappings for dropdown choices and predictions
+# Input Mappings
 LABEL_MAPS = {
     "buying": {0: "Low", 1: "Medium", 2: "High", 3: "Very High"},
     "maint": {0: "Low", 1: "Medium", 2: "High", 3: "Very High"},
@@ -45,13 +44,11 @@ def get_initial_history():
     ])
 
 # ==========================================================
-# 2. Visualization Charts
+# 2. Interactive Charts
 # ==========================================================
-def generate_prediction_chart(selected_safety, selected_boot, pred_class):
-    """Generates a gauge-style radar breakdown chart for current input specs."""
-    categories = ['Buying Price', 'Maintenance', 'Door Count', 'Capacity', 'Boot Size', 'Safety Index']
-    
-    # Calculate relative score index (0-100%)
+def generate_prediction_chart(selected_safety, selected_boot):
+    """Generates a clean radar chart profile of vehicle specifications."""
+    categories = ['Price Index', 'Maintenance', 'Door Config', 'Seating', 'Boot Vol.', 'Safety Rating']
     values = [50, 50, 75, 75, (selected_boot + 1) * 33, (selected_safety + 1) * 33]
     
     fig = go.Figure()
@@ -59,27 +56,27 @@ def generate_prediction_chart(selected_safety, selected_boot, pred_class):
         r=values,
         theta=categories,
         fill='toself',
-        fillcolor='rgba(16, 185, 129, 0.15)',
-        line=dict(color='#10b981', width=2),
-        name='Spec Profile'
+        fillcolor='rgba(15, 23, 42, 0.08)',
+        line=dict(color='#0f172a', width=2),
+        name='Vehicle Profile'
     ))
 
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, linecolor='#e5e7eb'),
-            angularaxis=dict(tickfont=dict(size=10, color='#6b7280'))
+            radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, linecolor='#e2e8f0'),
+            angularaxis=dict(tickfont=dict(size=10, color='#64748b'))
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=25, r=25, t=30, b=25),
         height=260,
         showlegend=False,
-        title=dict(text="<b>Vehicle Spec Assessment Profile</b>", font=dict(size=13, color="#1f2937"))
+        title=dict(text="<b>Chassis Spec Assessment Radar</b>", font=dict(size=12, color="#0f172a"))
     )
     return fig
 
 def generate_trend_chart(df_history):
-    """Generates live evaluation trends."""
+    """Generates evaluation trends history graph."""
     score_mapping = {"Unacceptable (unacc)": 1, "Acceptable (acc)": 2, "Good (good)": 3, "Very Good (vgood)": 4}
     y_values = [score_mapping.get(d, 1) for d in df_history["Decision"]]
     x_values = df_history["Eval_ID"].tolist()
@@ -89,29 +86,28 @@ def generate_trend_chart(df_history):
         x=x_values,
         y=y_values,
         mode='lines+markers',
-        line=dict(color='#3b82f6', width=3, shape='spline'),
-        marker=dict(size=7, color='#1d4ed8'),
+        line=dict(color='#0f172a', width=3, shape='spline'),
+        marker=dict(size=8, color='#10b981', line=dict(color='#0f172a', width=2)),
         fill='tozeroy',
-        fillcolor='rgba(59, 130, 246, 0.08)'
+        fillcolor='rgba(16, 185, 129, 0.08)'
     ))
 
     fig.update_layout(
-        title=dict(text="<b>Evaluation Score Trend Log</b>", font=dict(color="#1f2937", size=13)),
+        title=dict(text="<b>Telemetry Assessment History</b>", font=dict(color="#0f172a", size=12)),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=20, r=20, t=35, b=20),
         height=260,
-        xaxis=dict(showgrid=False, color='#9ca3af', tickfont=dict(size=10)),
+        xaxis=dict(showgrid=False, color='#94a3b8', tickfont=dict(size=10)),
         yaxis=dict(
-            showgrid=True, gridcolor='#f3f4f6', color='#9ca3af',
+            showgrid=True, gridcolor='#f1f5f9', color='#94a3b8',
             tickvals=[1, 2, 3, 4], ticktext=['Unacc', 'Acc', 'Good', 'VGood']
         ),
         showlegend=False
     )
     return fig
 
-def create_kpi_card(title, value, subtitle, color="#3b82f6"):
-    """HTML component for top metric cards."""
+def create_kpi_card(title, value, subtitle, color="#0f172a"):
     return f"""
     <div class="kpi-card">
         <div class="kpi-title">{title}</div>
@@ -121,25 +117,22 @@ def create_kpi_card(title, value, subtitle, color="#3b82f6"):
     """
 
 # ==========================================================
-# 3. Main Evaluation Handler
+# 3. Main Logic Controller
 # ==========================================================
 def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     if any(v is None for v in [buying, maint, doors, persons, boot, safety]):
-        err_box = """<div class="result-card error-card">⚠️ Please configure all vehicle input specifications.</div>"""
-        return history_df, history_df, generate_prediction_chart(1, 1, 1), generate_trend_chart(history_df), err_box, gr.update(), gr.update(), gr.update(), gr.update()
+        err_box = """<div class="result-card error-card">⚠️ Please configure all parameters to run evaluation.</div>"""
+        return history_df, history_df, generate_prediction_chart(1, 1), generate_trend_chart(history_df), err_box, gr.update(), gr.update(), gr.update(), gr.update()
 
-    # Convert inputs
     b_val, m_val, d_val, p_val, boot_val, s_val = int(buying), int(maint), int(doors), int(persons), int(boot), int(safety)
     feature_vec = [[b_val, m_val, d_val, p_val, boot_val, s_val]]
 
-    # Predict or compute score
     if deployed_xgb is not None:
         try:
             pred_class = int(deployed_xgb.predict(feature_vec)[0])
         except Exception:
             pred_class = 0 if s_val == 0 else (1 if b_val >= 2 else 2)
     else:
-        # Rules fallback matching car dataset logic
         if s_val == 0 or p_val == 2:
             pred_class = 0
         elif s_val == 2 and b_val <= 1 and m_val <= 1:
@@ -151,7 +144,6 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
 
     decision_text, status_badge, badge_color = RESULT_MAP.get(pred_class, ("Unacceptable", "FAIL", "#ef4444"))
     
-    # Create log entry
     eval_id = f"EV-{1001 + len(history_df)}"
     time_str = datetime.now().strftime("%H:%M:%S")
 
@@ -170,38 +162,36 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
 
     updated_df = pd.concat([pd.DataFrame([new_entry]), history_df], ignore_index=True)
 
-    # Compute KPI metrics
     total_evals = len(updated_df)
     pass_cnt = len(updated_df[updated_df["Status"] == "PASS"])
     pass_rate = f"{(pass_cnt / total_evals) * 100:.1f}%"
     high_safety = len(updated_df[updated_df["Safety"] == "High"])
 
-    kpi1 = create_kpi_card("Total Evaluated", f"{total_evals} Vehicles", "↗ Real-time Session", "#3b82f6")
+    kpi1 = create_kpi_card("Total Evaluated", f"{total_evals} Vehicles", "↗ Real-time Session", "#0f172a")
     kpi2 = create_kpi_card("Safety Pass Rate", pass_rate, f"↗ {pass_cnt} Qualified", "#10b981")
-    kpi3 = create_kpi_card("High Safety Tier", f"{high_safety} Units", "↗ High Rating", "#8b5cf6")
+    kpi3 = create_kpi_card("High Safety Tier", f"{high_safety} Units", "↗ High Rating", "#3b82f6")
     kpi4 = create_kpi_card("Latest Evaluation", decision_text.split()[0], f"Status: {status_badge}", badge_color)
 
-    # Output Card
     result_html = f"""
     <div class="result-card" style="border-left: 5px solid {badge_color};">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">PREDICTION OUTCOME</span>
+            <span style="font-size: 0.75rem; color: #64748b; font-weight: 700;">PREDICTION RESULT</span>
             <span class="badge" style="background: {badge_color}; color: #ffffff;">{status_badge}</span>
         </div>
         <h2 style="margin: 6px 0; color: {badge_color}; font-size: 1.4rem; font-weight: 800;">{decision_text}</h2>
-        <p style="margin: 0; color: #6b7280; font-size: 0.85rem;">Assessed under ID <b>{eval_id}</b> at {time_str}.</p>
+        <p style="margin: 0; color: #64748b; font-size: 0.85rem;">Evaluated under ID <b>{eval_id}</b> at {time_str}.</p>
     </div>
     """
 
-    spec_chart = generate_prediction_chart(s_val, boot_val, pred_class)
+    spec_chart = generate_prediction_chart(s_val, boot_val)
     trend_chart = generate_trend_chart(updated_df)
 
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Dashboard CSS (Clean Dribbble Light Theme)
+# 4. Ultra-Clean Showroom Modern CSS + Google Model Viewer JS
 # ==========================================================
-DASHBOARD_CSS = """
+SHOWROOM_CSS = """
 :root {
     --bg-color: #f8fafc;
     --card-bg: #ffffff;
@@ -220,39 +210,42 @@ body, .gradio-container {
 .top-header {
     background: #ffffff;
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 18px 24px;
+    border-radius: 20px;
+    padding: 18px 28px;
     margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
 .main-title {
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-size: 1.3rem;
+    font-weight: 900;
     color: var(--text-main);
-    letter-spacing: -0.3px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .dev-badge {
     background: #f1f5f9;
     border: 1px solid var(--border-color);
-    padding: 6px 14px;
-    border-radius: 20px;
+    padding: 8px 16px;
+    border-radius: 30px;
     font-size: 0.85rem;
     font-weight: 600;
     color: #334155;
 }
 
-/* Top KPI Cards */
+/* Top KPI Stat Cards */
 .kpi-card {
     background: #ffffff;
     border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 
 .kpi-title {
@@ -260,10 +253,11 @@ body, .gradio-container {
     color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .kpi-value {
-    font-size: 1.6rem;
+    font-size: 1.65rem;
     font-weight: 800;
     color: var(--text-main);
     margin: 4px 0;
@@ -274,43 +268,85 @@ body, .gradio-container {
     font-weight: 600;
 }
 
-/* Dashboard Panel Layout */
+/* Dashboard Panels */
 .dashboard-panel {
     background: #ffffff;
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-/* Primary Action Button */
+/* 3D Car Model Studio Container */
+.car-3d-stage {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+model-viewer {
+    width: 100%;
+    height: 100%;
+    --poster-color: transparent;
+}
+
+/* Floating HUD Callouts */
+.floating-callout {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 8px 14px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.callout-tl { top: 20px; left: 20px; }
+.callout-tr { top: 20px; right: 20px; }
+.callout-br { bottom: 20px; right: 20px; }
+
+/* Primary Button */
 .btn-eval {
     background: #0f172a !important;
     color: #ffffff !important;
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     font-weight: 700 !important;
-    padding: 12px !important;
+    padding: 14px !important;
     border: none !important;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2) !important;
+    transition: all 0.2s ease !important;
 }
 
 .btn-eval:hover {
     background: #1e293b !important;
+    transform: translateY(-1px);
 }
 
-/* Prediction Output Card */
+/* Result Cards */
 .result-card {
     background: #f8fafc;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 18px;
     margin-top: 15px;
     border: 1px solid var(--border-color);
 }
 
 .badge {
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 800;
 }
 
@@ -322,25 +358,33 @@ body, .gradio-container {
 }
 
 .gr-dataframe {
-    border-radius: 12px !important;
+    border-radius: 14px !important;
     border: 1px solid var(--border-color) !important;
 }
 """
 
+# HTML block to load Google Model Viewer WebGL Web Component
+MODEL_VIEWER_SCRIPT = """
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+"""
+
 # ==========================================================
-# 5. Interface Layout Construction
+# 5. Interface Layout
 # ==========================================================
-with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=DASHBOARD_CSS) as demo:
+with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM_CSS) as demo:
+    
+    # Load 3D WebGL Library
+    gr.HTML(MODEL_VIEWER_SCRIPT)
     
     # History State Variable
     history_state = gr.State(get_initial_history())
 
-    # Header Bar with Project Title & Developer Info
+    # Header Bar with Project Title & Developer Details
     gr.HTML(
         """
         <div class="top-header">
             <div class="main-title">
-                🚗 CAR SAFETY AND EVALUATION PREDICTION SYSTEM
+                🏎️ CAR SAFETY AND EVALUATION PREDICTION SYSTEM
             </div>
             <div class="dev-badge">
                 👤 Developer: <b>Sameer Chopra</b> &nbsp;|&nbsp; Roll No.: <b>241020</b>
@@ -349,19 +393,52 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=DASHBOAR
         """
     )
 
-    # Top Metric KPI Cards
+    # Top Metric KPI Stat Cards
     with gr.Row():
-        kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#3b82f6"))
+        kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#0f172a"))
         kpi_2 = gr.HTML(create_kpi_card("Safety Pass Rate", "75.0%", "↗ 3 Qualified", "#10b981"))
-        kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#8b5cf6"))
-        kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#3b82f6"))
+        kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
+        kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # Middle Section: Input Panel + Live Telemetry & Trend Graphs
+    # 3D VEHICLE SHOWROOM STAGE (Minimalist NIO / Porsche Style Visual)
+    with gr.Row():
+        with gr.Column(elem_classes=["dashboard-panel"]):
+            gr.Markdown("### 🚙 **3D Vehicle Architecture Studio** (Interactive 360° Inspection)")
+            gr.HTML(
+                """
+                <div class="car-3d-stage">
+                    <!-- Floating Architectural HUD Callouts -->
+                    <div class="floating-callout callout-tl">
+                        ⚡ Active Telemetry Pipeline
+                    </div>
+                    <div class="floating-callout callout-tr">
+                        🛡️ Safety Architecture Rated
+                    </div>
+                    <div class="floating-callout callout-br">
+                        🖱️ Drag to rotate 3D chassis
+                    </div>
+
+                    <!-- 3D Interactive Car Model WebGL Canvas -->
+                    <model-viewer 
+                        src="https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/ToyCar/glTF-Binary/ToyCar.glb"
+                        alt="3D Car Model"
+                        auto-rotate 
+                        camera-controls 
+                        shadow-intensity="1.5"
+                        environment-image="neutral"
+                        exposure="1.0"
+                        interaction-prompt="none">
+                    </model-viewer>
+                </div>
+                """
+            )
+
+    # Middle Section: Input Parameters & Analytics Charts
     with gr.Row():
         
-        # Left Panel: Spec Inputs
+        # Spec Input Console
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 🎛️ **Vehicle Parameters**")
+            gr.Markdown("### 🎛️ **Vehicle Specifications Console**")
             
             with gr.Row():
                 buying_price = gr.Dropdown(
@@ -386,43 +463,43 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=DASHBOAR
             with gr.Row():
                 lug_boot = gr.Dropdown(
                     choices=[("Small", 0), ("Medium", 1), ("Big", 2)],
-                    label="Boot Capacity", value=1
+                    label="Boot Luggage Capacity", value=1
                 )
                 safety = gr.Dropdown(
                     choices=[("Low", 0), ("Medium", 1), ("High", 2)],
-                    label="Safety Rating", value=2
+                    label="Safety Index Rating", value=2
                 )
 
             btn_eval = gr.Button("EVALUATE VEHICLE SAFETY ⚡", elem_classes=["btn-eval"])
 
-            # Result Display Box
+            # Result Box
             result_display = gr.HTML(
                 value="""
                 <div class="result-card">
-                    <span style="color: #6b7280; font-size: 0.8rem; font-weight: 700;">SYSTEM READY</span>
-                    <p style="margin: 4px 0 0 0; color: #475569; font-size: 0.88rem;">Configure vehicle inputs and run evaluation diagnostic.</p>
+                    <span style="color: #64748b; font-size: 0.8rem; font-weight: 700;">SYSTEM READY</span>
+                    <p style="margin: 4px 0 0 0; color: #334155; font-size: 0.88rem;">Select vehicle specifications above and click Evaluate to trigger assessment.</p>
                 </div>
                 """
             )
 
-        # Center Panel: Spec Assessment Radar Profile Chart
+        # Radar Spec Breakdown Chart
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             spec_plot = gr.Plot(
-                value=generate_prediction_chart(2, 1, 2), 
+                value=generate_prediction_chart(2, 1), 
                 show_label=False
             )
 
-        # Right Panel: Live Evaluation Trend Line Chart
+        # Telemetry Trend History Chart
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             trend_plot = gr.Plot(
                 value=generate_trend_chart(get_initial_history()), 
                 show_label=False
             )
 
-    # Bottom Section: Evaluation Log Table
+    # Bottom Section: Real-time Evaluation History Table
     with gr.Row():
         with gr.Column(elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 📋 **Real-time Assessment History Log**")
+            gr.Markdown("### 📋 **Real-Time Assessment Log History**")
             
             history_table = gr.Dataframe(
                 value=get_initial_history(),
@@ -431,7 +508,7 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=DASHBOAR
                 row_count=5
             )
 
-    # Trigger Handler
+    # Event binding
     btn_eval.click(
         fn=process_evaluation,
         inputs=[
@@ -457,11 +534,11 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=DASHBOAR
     )
 
 # ==========================================================
-# 6. Deployment Server Setup
+# 6. Deployment Launch Setup
 # ==========================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Starting Dashboard Server on port {port}...")
+    print(f"🚀 Launching 3D Showroom UI on port {port}...")
     demo.launch(
         server_name="0.0.0.0",
         server_port=port
