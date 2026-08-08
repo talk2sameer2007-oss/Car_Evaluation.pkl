@@ -349,8 +349,8 @@ body, .gradio-container {
 }
 """
 
-# HTML template for self-contained 3D BMW canvas inside an iframe
-3D_IFRAME_HTML = """
+# Valid Python Identifier Variable Name
+BMW_3D_IFRAME_HTML = """
 <iframe srcdoc='
 <!DOCTYPE html>
 <html>
@@ -408,12 +408,12 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
         kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
         kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # 3D Vehicle Interactive Studio + BMW Cockpit & Interior Gallery (Showroom Inspired Layout)
+    # 3D Vehicle Interactive Studio + BMW Cockpit & Interior Gallery
     with gr.Row():
         # Left Column: 3D BMW Canvas
         with gr.Column(scale=7, elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🏎️ **BMW M4 Interactive 3D Model Studio**")
-            gr.HTML(3D_IFRAME_HTML)
+            gr.HTML(BMW_3D_IFRAME_HTML)
 
         # Right Column: First-Class BMW Interior & Cockpit Gallery
         with gr.Column(scale=5, elem_classes=["dashboard-panel"]):
