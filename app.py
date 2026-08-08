@@ -267,47 +267,6 @@ body, .gradio-container {
     box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-/* Interior Reference Layout (2 Cards Side-by-Side) */
-.interior-container {
-    display: flex;
-    gap: 16px;
-    height: 380px;
-    margin-top: 10px;
-}
-
-.interior-card-large {
-    flex: 1;
-    position: relative;
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-}
-
-.interior-card-large img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-}
-
-.interior-card-large:hover img {
-    transform: scale(1.03);
-}
-
-.interior-tag-overlay {
-    position: absolute;
-    bottom: 14px;
-    left: 14px;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(10px);
-    color: #ffffff;
-    padding: 8px 14px;
-    border-radius: 10px;
-    font-size: 0.78rem;
-    font-weight: 700;
-}
-
 .btn-eval {
     background: #0f172a !important;
     color: #ffffff !important;
@@ -377,7 +336,7 @@ BMW_3D_IFRAME_HTML = """
   </model-viewer>
 </body>
 </html>
-' style="width: 100%; height: 440px; border: 1px solid #e2e8f0; border-radius: 16px;"></iframe>
+' style="width: 100%; height: 480px; border: 1px solid #e2e8f0; border-radius: 16px;"></iframe>
 """
 
 # ==========================================================
@@ -408,31 +367,11 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
         kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
         kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # 3D BMW Studio + First-Class Executive Interior Seating Section
+    # Full-Width 3D BMW Interactive Studio (No Images)
     with gr.Row():
-        # Left Column: 3D BMW Canvas
-        with gr.Column(scale=6, elem_classes=["dashboard-panel"]):
+        with gr.Column(elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🏎️ **BMW M4 Interactive 3D Model Studio**")
             gr.HTML(BMW_3D_IFRAME_HTML)
-
-        # Right Column: Executive Interior Seating (Matching Reference Screenshot)
-        with gr.Column(scale=6, elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 💺 **First-Class Comfort for Every Ride**")
-            gr.Markdown("<span style='color: #64748b; font-size: 0.85rem;'>Experience the Future of Comfort & Executive Luxury Seating</span>")
-            gr.HTML(
-                """
-                <div class="interior-container">
-                    <div class="interior-card-large">
-                        <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=1000&auto=format&fit=crop" alt="Quilted White Executive Leather Seats"/>
-                        <div class="interior-tag-overlay">🛋️ Quilted Executive Leather Seating</div>
-                    </div>
-                    <div class="interior-card-large">
-                        <img src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?q=80&w=1000&auto=format&fit=crop" alt="Executive Rear Lounge Cabin"/>
-                        <div class="interior-tag-overlay">🏎️ Executive Panoramic Cabin Space</div>
-                    </div>
-                </div>
-                """
-            )
 
     # Input Control Console & Analytics
     with gr.Row():
