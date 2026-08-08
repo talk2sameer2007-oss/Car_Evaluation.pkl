@@ -6,18 +6,18 @@ import plotly.graph_objects as go
 import gradio as gr
 
 # ==========================================================
-# 1. Model Loading & Fallback Setup
+# 1. Model Loading & Configuration
 # ==========================================================
 MODEL_PATH = "Car_Evaluation.pkl"
 
 try:
     deployed_xgb = joblib.load(MODEL_PATH)
-    print("✅ Model loaded successfully!")
+    print("✅ XGBoost Model loaded successfully!")
 except Exception as e:
-    print(f"⚠️ Model note: {e}. Running in simulation fallback mode.")
+    print(f"⚠️ Model note: {e}. Running in pipeline simulation fallback mode.")
     deployed_xgb = None
 
-# Input Mappings
+# Categorical Display Mappings
 LABEL_MAPS = {
     "buying": {0: "Low", 1: "Medium", 2: "High", 3: "Very High"},
     "maint": {0: "Low", 1: "Medium", 2: "High", 3: "Very High"},
@@ -43,7 +43,7 @@ def get_initial_history():
     ])
 
 # ==========================================================
-# 2. Charts & Visualizations
+# 2. Plotly Charts
 # ==========================================================
 def generate_prediction_chart(selected_safety, selected_boot):
     categories = ['Price Index', 'Maintenance', 'Door Config', 'Seating', 'Boot Vol.', 'Safety Rating']
@@ -114,7 +114,7 @@ def create_kpi_card(title, value, subtitle, color="#0f172a"):
     """
 
 # ==========================================================
-# 3. Main Evaluation Function
+# 3. Prediction Handler
 # ==========================================================
 def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     if any(v is None for v in [buying, maint, doors, persons, boot, safety]):
@@ -186,7 +186,7 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Inject Google Model Viewer via Document Head
+# 4. Inject Google Model Viewer Script & Custom CSS
 # ==========================================================
 HEAD_JS = """
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
@@ -272,12 +272,12 @@ body, .gradio-container {
     box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-/* Explicit styling so WebGL component renders full dimension */
+/* 3D Model Stage Styling */
 .car-3d-stage {
     position: relative;
     width: 100%;
     height: 420px;
-    background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+    background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%);
     border-radius: 20px;
     border: 1px solid var(--border-color);
     overflow: hidden;
@@ -308,6 +308,46 @@ model-viewer {
 .callout-tl { top: 20px; left: 20px; }
 .callout-tr { top: 20px; right: 20px; }
 .callout-br { bottom: 20px; right: 20px; }
+
+/* BMW Interior Gallery Card Grid */
+.interior-gallery {
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    height: 420px;
+}
+
+.interior-img-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.interior-img-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.interior-img-card:hover img {
+    transform: scale(1.03);
+}
+
+.interior-label {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
 
 .btn-eval {
     background: #0f172a !important;
@@ -372,27 +412,28 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS
         """
     )
 
-    # Top KPI Cards
+    # KPI Row
     with gr.Row():
         kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#0f172a"))
         kpi_2 = gr.HTML(create_kpi_card("Safety Pass Rate", "75.0%", "↗ 3 Qualified", "#10b981"))
         kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
         kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # 3D Interactive Car Showroom Canvas
+    # 3D BMW M4 Showcase & Executive Interior Gallery Side-by-Side
     with gr.Row():
-        with gr.Column(elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 🚙 **3D Vehicle Architecture Studio** (360° Interactive Canvas)")
+        # Left Column: Interactive 3D BMW M4 Model
+        with gr.Column(scale=7, elem_classes=["dashboard-panel"]):
+            gr.Markdown("### 🏎️ **BMW M4 Competition 3D Canvas** (360° Interactive)")
             gr.HTML(
                 """
                 <div class="car-3d-stage">
-                    <div class="floating-callout callout-tl">⚡ Active Telemetry Pipeline</div>
-                    <div class="floating-callout callout-tr">🛡️ Safety Rated Architecture</div>
+                    <div class="floating-callout callout-tl">🏎️ BMW M4 Competition M Package</div>
+                    <div class="floating-callout callout-tr">🛡️ Active Telemetry Pipeline</div>
                     <div class="floating-callout callout-br">🖱️ Click & Drag to Rotate 3D Model</div>
 
                     <model-viewer 
-                        src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/ToyCar/glTF-Binary/ToyCar.glb"
-                        alt="3D Interactive Car Model"
+                        src="https://cdn.jsdelivr.net/gh/coopercodes/bmwGLB@main/bmw_m4_competition_m_package.glb"
+                        alt="3D BMW M4 Competition Model"
                         auto-rotate 
                         camera-controls 
                         shadow-intensity="1.5"
@@ -404,7 +445,25 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS
                 """
             )
 
-    # Controls & Analytics Charts
+        # Right Column: High-Resolution BMW Interior Showcase
+        with gr.Column(scale=5, elem_classes=["dashboard-panel"]):
+            gr.Markdown("### 💺 **Executive Interior & Cockpit Studio**")
+            gr.HTML(
+                """
+                <div class="interior-gallery">
+                    <div class="interior-img-card">
+                        <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=1000&auto=format&fit=crop" alt="BMW Driver Cockpit HUD"/>
+                        <div class="interior-label">🎛️ Digital iDrive Cockpit & Telemetry</div>
+                    </div>
+                    <div class="interior-img-card">
+                        <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1000&auto=format&fit=crop" alt="BMW Executive Leather Interior"/>
+                        <div class="interior-label">🛋️ Executive M-Sport Comfort & Seating</div>
+                    </div>
+                </div>
+                """
+            )
+
+    # Input Console & Analytics Charts
     with gr.Row():
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🎛️ **Vehicle Specifications Console**")
@@ -476,5 +535,5 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Launching 3D Showroom UI on port {port}...")
+    print(f"🚀 Launching BMW Showroom UI on port {port}...")
     demo.launch(server_name="0.0.0.0", server_port=port)
