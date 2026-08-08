@@ -6,18 +6,17 @@ import plotly.graph_objects as go
 import gradio as gr
 
 # ==========================================================
-# 1. Machine Learning Model Setup
+# 1. Model Configuration & Initial Setup
 # ==========================================================
 MODEL_PATH = "Car_Evaluation.pkl"
 
 try:
     deployed_xgb = joblib.load(MODEL_PATH)
-    print("✅ Model loaded successfully!")
+    print("✅ XGBoost Model loaded successfully!")
 except Exception as e:
-    print(f"⚠️ Note: {e}. Running in simulation fallback mode.")
+    print(f"⚠️ Model note: {e}. Running in simulation mode.")
     deployed_xgb = None
 
-# Categorical Display Mappings
 LABEL_MAPS = {
     "buying": {0: "Low", 1: "Medium", 2: "High", 3: "Very High"},
     "maint": {0: "Low", 1: "Medium", 2: "High", 3: "Very High"},
@@ -43,7 +42,7 @@ def get_initial_history():
     ])
 
 # ==========================================================
-# 2. Analytics Charts (Plotly)
+# 2. Analytics Visualization
 # ==========================================================
 def generate_prediction_chart(selected_safety, selected_boot):
     categories = ['Price Index', 'Maintenance', 'Door Config', 'Seating', 'Boot Vol.', 'Safety Rating']
@@ -69,7 +68,7 @@ def generate_prediction_chart(selected_safety, selected_boot):
         margin=dict(l=25, r=25, t=30, b=25),
         height=260,
         showlegend=False,
-        title=dict(text="<b>BMW Chassis Spec Assessment Radar</b>", font=dict(size=12, color="#0f172a"))
+        title=dict(text="<b>BMW Spec Assessment Radar</b>", font=dict(size=12, color="#0f172a"))
     )
     return fig
 
@@ -114,7 +113,7 @@ def create_kpi_card(title, value, subtitle, color="#0f172a"):
     """
 
 # ==========================================================
-# 3. Main Evaluation Handler
+# 3. Prediction Handler
 # ==========================================================
 def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     if any(v is None for v in [buying, maint, doors, persons, boot, safety]):
@@ -186,12 +185,8 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Inject Verified WebGL Model Viewer & Custom Styling
+# 4. Custom Styling & HTML Templates
 # ==========================================================
-HEAD_JS = """
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-"""
-
 SHOWROOM_CSS = """
 :root {
     --bg-color: #f8fafc;
@@ -272,82 +267,43 @@ body, .gradio-container {
     box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-/* 3D Model Stage - Guarantees Non-Zero Height */
-.car-3d-stage {
-    position: relative;
-    width: 100%;
-    min-height: 420px;
-    height: 420px;
-    background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%);
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-}
-
-model-viewer {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 420px !important;
-    --poster-color: transparent;
-}
-
-.floating-callout {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    padding: 8px 14px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #0f172a;
-    pointer-events: none;
-    z-index: 10;
-}
-
-.callout-tl { top: 20px; left: 20px; }
-.callout-tr { top: 20px; right: 20px; }
-.callout-br { bottom: 20px; right: 20px; }
-
-/* Authentic BMW Cockpit Gallery Grid */
-.interior-gallery {
+/* Interior Showcase 2x2 Grid */
+.interior-grid {
     display: grid;
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-    height: 420px;
+    height: 440px;
 }
 
-.interior-img-card {
+.interior-card {
     position: relative;
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 
-.interior-img-card img {
+.interior-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
 }
 
-.interior-img-card:hover img {
-    transform: scale(1.03);
+.interior-card:hover img {
+    transform: scale(1.04);
 }
 
-.interior-label {
+.interior-tag {
     position: absolute;
-    bottom: 12px;
-    left: 12px;
+    bottom: 10px;
+    left: 10px;
     background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(8px);
     color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.75rem;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
     font-weight: 700;
 }
 
@@ -393,10 +349,41 @@ model-viewer {
 }
 """
 
+# HTML template for self-contained 3D BMW canvas inside an iframe
+3D_IFRAME_HTML = """
+<iframe srcdoc='
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%); font-family: sans-serif; }
+    model-viewer { width: 100%; height: 100%; }
+    .overlay-badge { position: absolute; top: 14px; left: 14px; background: rgba(15, 23, 42, 0.85); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; backdrop-filter: blur(6px); z-index: 100; }
+    .overlay-hint { position: absolute; bottom: 14px; right: 14px; background: rgba(255, 255, 255, 0.85); color: #0f172a; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; backdrop-filter: blur(6px); border: 1px solid #cbd5e1; z-index: 100; }
+  </style>
+</head>
+<body>
+  <div class="overlay-badge">🏎️ BMW M4 Coupe — 360° Interactive View</div>
+  <div class="overlay-hint">🖱️ Click & Drag to Rotate 3D Model</div>
+  <model-viewer 
+    src="https://cdn.jsdelivr.net/gh/fazil47/assets@master/3d/vehicles/bmw_m4_2021.glb" 
+    alt="3D BMW M4 Coupe" 
+    auto-rotate 
+    camera-controls 
+    shadow-intensity="1.8" 
+    exposure="1.1"
+    interaction-prompt="none">
+  </model-viewer>
+</body>
+</html>
+' style="width: 100%; height: 440px; border: 1px solid #e2e8f0; border-radius: 16px;"></iframe>
+"""
+
 # ==========================================================
-# 5. Interface Construction
+# 5. Gradio Dashboard Construction
 # ==========================================================
-with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS, css=SHOWROOM_CSS) as demo:
+with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM_CSS) as demo:
     
     history_state = gr.State(get_initial_history())
 
@@ -414,58 +401,47 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS
         """
     )
 
-    # Top KPI Row
+    # Top KPI Bar
     with gr.Row():
         kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#0f172a"))
         kpi_2 = gr.HTML(create_kpi_card("Safety Pass Rate", "75.0%", "↗ 3 Qualified", "#10b981"))
         kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
         kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # 3D Vehicle Interactive Studio + Genuine BMW Interior Gallery
+    # 3D Vehicle Interactive Studio + BMW Cockpit & Interior Gallery (Showroom Inspired Layout)
     with gr.Row():
-        # Left: Verified CORS-Compliant 3D Car Model Canvas
+        # Left Column: 3D BMW Canvas
         with gr.Column(scale=7, elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 🏎️ **BMW Chassis 3D Telemetry Studio** (360° Interactive Canvas)")
-            gr.HTML(
-                """
-                <div class="car-3d-stage">
-                    <div class="floating-callout callout-tl">🏎️ BMW M-Series Telemetry</div>
-                    <div class="floating-callout callout-tr">🛡️ Active Safety Inspection</div>
-                    <div class="floating-callout callout-br">🖱️ Click & Drag to Rotate 3D Model</div>
+            gr.Markdown("### 🏎️ **BMW M4 Interactive 3D Model Studio**")
+            gr.HTML(3D_IFRAME_HTML)
 
-                    <model-viewer 
-                        src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/ToyCar/glTF-Binary/ToyCar.glb"
-                        alt="3D Interactive BMW Model"
-                        auto-rotate 
-                        camera-controls 
-                        shadow-intensity="1.5"
-                        environment-image="neutral"
-                        exposure="1.0"
-                        interaction-prompt="none">
-                    </model-viewer>
-                </div>
-                """
-            )
-
-        # Right: Verified BMW iDrive Cockpit & M-Sport Interior Visuals
+        # Right Column: First-Class BMW Interior & Cockpit Gallery
         with gr.Column(scale=5, elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 💺 **BMW iDrive Cockpit & Executive Interior**")
+            gr.Markdown("### 💺 **First-Class Comfort & Executive Cabin Gallery**")
             gr.HTML(
                 """
-                <div class="interior-gallery">
-                    <div class="interior-img-card">
-                        <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=1000&auto=format&fit=crop" alt="BMW Curved iDrive Cockpit"/>
-                        <div class="interior-label">🎛️ BMW Curved Display & iDrive Telemetry</div>
+                <div class="interior-grid">
+                    <div class="interior-card">
+                        <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=1000&auto=format&fit=crop" alt="BMW M-Sport Steering Wheel & Cockpit"/>
+                        <div class="interior-tag">🎛️ BMW M-Sport Steering & Curved HUD</div>
                     </div>
-                    <div class="interior-img-card">
-                        <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=1000&auto=format&fit=crop" alt="BMW M-Sport Executive Interior"/>
-                        <div class="interior-label">🛋️ BMW M-Sport Executive Leather Cabin</div>
+                    <div class="interior-card">
+                        <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=1000&auto=format&fit=crop" alt="BMW Executive Leather Seats"/>
+                        <div class="interior-tag">🛋️ BMW M Leather Comfort Seats</div>
+                    </div>
+                    <div class="interior-card">
+                        <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1000&auto=format&fit=crop" alt="BMW Driver Cockpit View"/>
+                        <div class="interior-tag">🏎️ Driver Cockpit & Digital iDrive</div>
+                    </div>
+                    <div class="interior-card">
+                        <img src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?q=80&w=1000&auto=format&fit=crop" alt="BMW Center Console & Trim"/>
+                        <div class="interior-tag">⚙️ Executive Center Console & Gear Shift</div>
                     </div>
                 </div>
                 """
             )
 
-    # Input Console & Analytics Charts
+    # Input Control Console & Analytics Plots
     with gr.Row():
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🎛️ **Vehicle Specifications Console**")
@@ -517,7 +493,7 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             trend_plot = gr.Plot(value=generate_trend_chart(get_initial_history()), show_label=False)
 
-    # Real-time Log Table
+    # Telemetry Log Table
     with gr.Row():
         with gr.Column(elem_classes=["dashboard-panel"]):
             gr.Markdown("### 📋 **Real-Time Assessment Log History**")
