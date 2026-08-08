@@ -267,43 +267,44 @@ body, .gradio-container {
     box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-/* Interior Showcase 2x2 Grid */
-.interior-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    height: 440px;
+/* Interior Reference Layout (2 Cards Side-by-Side) */
+.interior-container {
+    display: flex;
+    gap: 16px;
+    height: 380px;
+    margin-top: 10px;
 }
 
-.interior-card {
+.interior-card-large {
+    flex: 1;
     position: relative;
-    border-radius: 14px;
+    border-radius: 18px;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
 }
 
-.interior-card img {
+.interior-card-large img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
 }
 
-.interior-card:hover img {
-    transform: scale(1.04);
+.interior-card-large:hover img {
+    transform: scale(1.03);
 }
 
-.interior-tag {
+.interior-tag-overlay {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
+    bottom: 14px;
+    left: 14px;
     background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
     color: #ffffff;
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 0.72rem;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.78rem;
     font-weight: 700;
 }
 
@@ -349,7 +350,6 @@ body, .gradio-container {
 }
 """
 
-# Valid Python Identifier Variable Name
 BMW_3D_IFRAME_HTML = """
 <iframe srcdoc='
 <!DOCTYPE html>
@@ -387,7 +387,7 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
     
     history_state = gr.State(get_initial_history())
 
-    # Header Bar
+    # Top Header
     gr.HTML(
         """
         <div class="top-header">
@@ -401,47 +401,40 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
         """
     )
 
-    # Top KPI Bar
+    # Top KPI Metrics
     with gr.Row():
         kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#0f172a"))
         kpi_2 = gr.HTML(create_kpi_card("Safety Pass Rate", "75.0%", "↗ 3 Qualified", "#10b981"))
         kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
         kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # 3D Vehicle Interactive Studio + BMW Cockpit & Interior Gallery
+    # 3D BMW Studio + First-Class Executive Interior Seating Section
     with gr.Row():
         # Left Column: 3D BMW Canvas
-        with gr.Column(scale=7, elem_classes=["dashboard-panel"]):
+        with gr.Column(scale=6, elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🏎️ **BMW M4 Interactive 3D Model Studio**")
             gr.HTML(BMW_3D_IFRAME_HTML)
 
-        # Right Column: First-Class BMW Interior & Cockpit Gallery
-        with gr.Column(scale=5, elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 💺 **First-Class Comfort & Executive Cabin Gallery**")
+        # Right Column: Executive Interior Seating (Matching Reference Screenshot)
+        with gr.Column(scale=6, elem_classes=["dashboard-panel"]):
+            gr.Markdown("### 💺 **First-Class Comfort for Every Ride**")
+            gr.Markdown("<span style='color: #64748b; font-size: 0.85rem;'>Experience the Future of Comfort & Executive Luxury Seating</span>")
             gr.HTML(
                 """
-                <div class="interior-grid">
-                    <div class="interior-card">
-                        <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=1000&auto=format&fit=crop" alt="BMW M-Sport Steering Wheel & Cockpit"/>
-                        <div class="interior-tag">🎛️ BMW M-Sport Steering & Curved HUD</div>
+                <div class="interior-container">
+                    <div class="interior-card-large">
+                        <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=1000&auto=format&fit=crop" alt="Quilted White Executive Leather Seats"/>
+                        <div class="interior-tag-overlay">🛋️ Quilted Executive Leather Seating</div>
                     </div>
-                    <div class="interior-card">
-                        <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=1000&auto=format&fit=crop" alt="BMW Executive Leather Seats"/>
-                        <div class="interior-tag">🛋️ BMW M Leather Comfort Seats</div>
-                    </div>
-                    <div class="interior-card">
-                        <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1000&auto=format&fit=crop" alt="BMW Driver Cockpit View"/>
-                        <div class="interior-tag">🏎️ Driver Cockpit & Digital iDrive</div>
-                    </div>
-                    <div class="interior-card">
-                        <img src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?q=80&w=1000&auto=format&fit=crop" alt="BMW Center Console & Trim"/>
-                        <div class="interior-tag">⚙️ Executive Center Console & Gear Shift</div>
+                    <div class="interior-card-large">
+                        <img src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?q=80&w=1000&auto=format&fit=crop" alt="Executive Rear Lounge Cabin"/>
+                        <div class="interior-tag-overlay">🏎️ Executive Panoramic Cabin Space</div>
                     </div>
                 </div>
                 """
             )
 
-    # Input Control Console & Analytics Plots
+    # Input Control Console & Analytics
     with gr.Row():
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🎛️ **Vehicle Specifications Console**")
