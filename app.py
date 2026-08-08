@@ -53,22 +53,22 @@ def generate_prediction_chart(selected_safety, selected_boot):
         r=values,
         theta=categories,
         fill='toself',
-        fillcolor='rgba(15, 23, 42, 0.08)',
-        line=dict(color='#0f172a', width=2),
+        fillcolor='rgba(59, 130, 246, 0.25)',
+        line=dict(color='#3b82f6', width=2),
         name='Vehicle Profile'
     ))
 
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, linecolor='#e2e8f0'),
-            angularaxis=dict(tickfont=dict(size=10, color='#64748b'))
+            radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, linecolor='#334155'),
+            angularaxis=dict(tickfont=dict(size=10, color='#94a3b8'))
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=25, r=25, t=30, b=25),
         height=260,
         showlegend=False,
-        title=dict(text="<b>BMW Spec Assessment Radar</b>", font=dict(size=12, color="#0f172a"))
+        title=dict(text="<b>BMW Spec Assessment Radar</b>", font=dict(size=12, color="#f8fafc"))
     )
     return fig
 
@@ -82,28 +82,28 @@ def generate_trend_chart(df_history):
         x=x_values,
         y=y_values,
         mode='lines+markers',
-        line=dict(color='#0f172a', width=3, shape='spline'),
-        marker=dict(size=8, color='#10b981', line=dict(color='#0f172a', width=2)),
+        line=dict(color='#8b5cf6', width=3, shape='spline'),
+        marker=dict(size=8, color='#10b981', line=dict(color='#38bdf8', width=2)),
         fill='tozeroy',
-        fillcolor='rgba(16, 185, 129, 0.08)'
+        fillcolor='rgba(139, 92, 246, 0.15)'
     ))
 
     fig.update_layout(
-        title=dict(text="<b>Telemetry Assessment History</b>", font=dict(color="#0f172a", size=12)),
+        title=dict(text="<b>Telemetry Assessment History</b>", font=dict(color="#f8fafc", size=12)),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=20, r=20, t=35, b=20),
         height=260,
-        xaxis=dict(showgrid=False, color='#94a3b8', tickfont=dict(size=10)),
+        xaxis=dict(showgrid=False, color='#64748b', tickfont=dict(size=10)),
         yaxis=dict(
-            showgrid=True, gridcolor='#f1f5f9', color='#94a3b8',
+            showgrid=True, gridcolor='#1e293b', color='#64748b',
             tickvals=[1, 2, 3, 4], ticktext=['Unacc', 'Acc', 'Good', 'VGood']
         ),
         showlegend=False
     )
     return fig
 
-def create_kpi_card(title, value, subtitle, color="#0f172a"):
+def create_kpi_card(title, value, subtitle, color="#3b82f6"):
     return f"""
     <div class="kpi-card">
         <div class="kpi-title">{title}</div>
@@ -163,19 +163,19 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     pass_rate = f"{(pass_cnt / total_evals) * 100:.1f}%"
     high_safety = len(updated_df[updated_df["Safety"] == "High"])
 
-    kpi1 = create_kpi_card("Total Evaluated", f"{total_evals} Vehicles", "↗ Real-time Session", "#0f172a")
+    kpi1 = create_kpi_card("Total Evaluated", f"{total_evals} Vehicles", "↗ Real-time Session", "#38bdf8")
     kpi2 = create_kpi_card("Safety Pass Rate", pass_rate, f"↗ {pass_cnt} Qualified", "#10b981")
-    kpi3 = create_kpi_card("High Safety Tier", f"{high_safety} Units", "↗ High Rating", "#3b82f6")
+    kpi3 = create_kpi_card("High Safety Tier", f"{high_safety} Units", "↗ High Rating", "#8b5cf6")
     kpi4 = create_kpi_card("Latest Evaluation", decision_text.split()[0], f"Status: {status_badge}", badge_color)
 
     result_html = f"""
     <div class="result-card" style="border-left: 5px solid {badge_color};">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.75rem; color: #64748b; font-weight: 700;">PREDICTION RESULT</span>
+            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700;">PREDICTION RESULT</span>
             <span class="badge" style="background: {badge_color}; color: #ffffff;">{status_badge}</span>
         </div>
         <h2 style="margin: 6px 0; color: {badge_color}; font-size: 1.4rem; font-weight: 800;">{decision_text}</h2>
-        <p style="margin: 0; color: #64748b; font-size: 0.85rem;">Evaluated under ID <b>{eval_id}</b> at {time_str}.</p>
+        <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Evaluated under ID <b>{eval_id}</b> at {time_str}.</p>
     </div>
     """
 
@@ -185,58 +185,66 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Custom Styling & HTML Templates
+# 4. Custom Styling & HTML Templates (Realistic Luxury Dark Theme)
 # ==========================================================
 SHOWROOM_CSS = """
 :root {
-    --bg-color: #f8fafc;
-    --card-bg: #ffffff;
-    --border-color: #e2e8f0;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
+    --bg-color: #0b0f17;
+    --card-bg: rgba(18, 24, 38, 0.75);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent-glow: linear-gradient(135deg, #2563eb, #7c3aed);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
 }
 
 body, .gradio-container {
     background-color: var(--bg-color) !important;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.12) 0px, transparent 50%) !important;
     font-family: 'Inter', -apple-system, sans-serif !important;
     color: var(--text-main) !important;
 }
 
 .top-header {
-    background: #ffffff;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 18px 28px;
+    padding: 20px 30px;
     margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .main-title {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 900;
-    color: var(--text-main);
+    background: linear-gradient(90deg, #60a5fa, #c084fc, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     letter-spacing: -0.5px;
 }
 
 .dev-badge {
-    background: #f1f5f9;
-    border: 1px solid var(--border-color);
-    padding: 8px 16px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 8px 18px;
     border-radius: 30px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #334155;
+    color: #cbd5e1;
 }
 
 .kpi-card {
-    background: #ffffff;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 18px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .kpi-title {
@@ -244,13 +252,13 @@ body, .gradio-container {
     color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
 }
 
 .kpi-value {
-    font-size: 1.65rem;
+    font-size: 1.7rem;
     font-weight: 800;
-    color: var(--text-main);
+    color: #ffffff;
     margin: 4px 0;
 }
 
@@ -260,29 +268,32 @@ body, .gradio-container {
 }
 
 .dashboard-panel {
-    background: #ffffff;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 20px;
     padding: 22px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .btn-eval {
-    background: #0f172a !important;
+    background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
     color: #ffffff !important;
     border-radius: 12px !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     padding: 14px !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2) !important;
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4) !important;
+    transition: all 0.3s ease !important;
 }
 
 .btn-eval:hover {
-    background: #1e293b !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(124, 58, 237, 0.6) !important;
 }
 
 .result-card {
-    background: #f8fafc;
+    background: rgba(15, 23, 42, 0.6);
     border-radius: 14px;
     padding: 18px;
     margin-top: 15px;
@@ -297,15 +308,25 @@ body, .gradio-container {
 }
 
 .error-card {
-    background: #fef2f2;
-    color: #ef4444;
-    border-color: #fecaca;
+    background: rgba(127, 29, 29, 0.4);
+    color: #fca5a5;
+    border-color: #f87171;
     font-weight: 600;
 }
 
+/* Form Dropdowns Styling */
+.gr-box, .gr-input, select {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+    border-color: var(--border-color) !important;
+    color: #f8fafc !important;
+}
+
+/* Dataframe Styling */
 .gr-dataframe {
+    background: rgba(15, 23, 42, 0.6) !important;
     border-radius: 14px !important;
     border: 1px solid var(--border-color) !important;
+    color: #f8fafc !important;
 }
 """
 
@@ -316,14 +337,14 @@ BMW_3D_IFRAME_HTML = """
 <head>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%); font-family: sans-serif; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%); font-family: sans-serif; }
     model-viewer { width: 100%; height: 100%; }
-    .overlay-badge { position: absolute; top: 14px; left: 14px; background: rgba(15, 23, 42, 0.85); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; backdrop-filter: blur(6px); z-index: 100; }
-    .overlay-hint { position: absolute; bottom: 14px; right: 14px; background: rgba(255, 255, 255, 0.85); color: #0f172a; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; backdrop-filter: blur(6px); border: 1px solid #cbd5e1; z-index: 100; }
+    .overlay-badge { position: absolute; top: 14px; left: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #38bdf8; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; backdrop-filter: blur(8px); z-index: 100; }
+    .overlay-hint { position: absolute; bottom: 14px; right: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; backdrop-filter: blur(8px); z-index: 100; }
   </style>
 </head>
 <body>
-  <div class="overlay-badge">🏎️ BMW M4 Coupe — 360° Interactive View</div>
+  <div class="overlay-badge">🏎️ BMW M4 Coupe — 360° Interactive Studio</div>
   <div class="overlay-hint">🖱️ Click & Drag to Rotate 3D Model</div>
   <model-viewer 
     src="https://cdn.jsdelivr.net/gh/fazil47/assets@master/3d/vehicles/bmw_m4_2021.glb" 
@@ -336,7 +357,7 @@ BMW_3D_IFRAME_HTML = """
   </model-viewer>
 </body>
 </html>
-' style="width: 100%; height: 480px; border: 1px solid #e2e8f0; border-radius: 16px;"></iframe>
+' style="width: 100%; height: 480px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;"></iframe>
 """
 
 # ==========================================================
@@ -354,7 +375,7 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
                 🏎️ CAR SAFETY AND EVALUATION PREDICTION SYSTEM
             </div>
             <div class="dev-badge">
-                👤 Developer: <b>Sameer Chopra</b> &nbsp;|&nbsp; Roll No.: <b>241020</b>
+                👤 Developer: <b style="color:#38bdf8;">Sameer Chopra</b> &nbsp;|&nbsp; Roll No.: <b style="color:#c084fc;">241020</b>
             </div>
         </div>
         """
@@ -362,12 +383,12 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
 
     # Top KPI Metrics
     with gr.Row():
-        kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#0f172a"))
+        kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#38bdf8"))
         kpi_2 = gr.HTML(create_kpi_card("Safety Pass Rate", "75.0%", "↗ 3 Qualified", "#10b981"))
-        kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
-        kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
+        kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#8b5cf6"))
+        kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#38bdf8"))
 
-    # Full-Width 3D BMW Interactive Studio (No Images)
+    # Full-Width 3D BMW Interactive Studio
     with gr.Row():
         with gr.Column(elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🏎️ **BMW M4 Interactive 3D Model Studio**")
@@ -413,8 +434,8 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
             result_display = gr.HTML(
                 value="""
                 <div class="result-card">
-                    <span style="color: #64748b; font-size: 0.8rem; font-weight: 700;">SYSTEM READY</span>
-                    <p style="margin: 4px 0 0 0; color: #334155; font-size: 0.88rem;">Configure vehicle specifications above and click Evaluate.</p>
+                    <span style="color: #94a3b8; font-size: 0.8rem; font-weight: 700;">SYSTEM READY</span>
+                    <p style="margin: 4px 0 0 0; color: #cbd5e1; font-size: 0.88rem;">Configure vehicle specifications above and click Evaluate.</p>
                 </div>
                 """
             )
