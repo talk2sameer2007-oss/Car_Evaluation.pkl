@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import gradio as gr
 
 # ==========================================================
-# 1. Model Loading & Configuration
+# 1. Model Loading & Fallback Setup
 # ==========================================================
 MODEL_PATH = "Car_Evaluation.pkl"
 
@@ -14,7 +14,7 @@ try:
     deployed_xgb = joblib.load(MODEL_PATH)
     print("✅ Model loaded successfully!")
 except Exception as e:
-    print(f"⚠️ Note: {e}. Running in simulation fallback mode.")
+    print(f"⚠️ Model note: {e}. Running in simulation fallback mode.")
     deployed_xgb = None
 
 # Input Mappings
@@ -34,7 +34,6 @@ RESULT_MAP = {
     3: ("Very Good (vgood)", "PASS", "#10b981")
 }
 
-# Initial seed data for history log table
 def get_initial_history():
     return pd.DataFrame([
         {"Eval_ID": "EV-1001", "Time": "10:15:20", "Buying": "Medium", "Maint": "Low", "Doors": "4", "Persons": "4", "Boot": "Medium", "Safety": "High", "Decision": "Very Good (vgood)", "Status": "PASS"},
@@ -44,10 +43,9 @@ def get_initial_history():
     ])
 
 # ==========================================================
-# 2. Interactive Charts
+# 2. Charts & Visualizations
 # ==========================================================
 def generate_prediction_chart(selected_safety, selected_boot):
-    """Generates a clean radar chart profile of vehicle specifications."""
     categories = ['Price Index', 'Maintenance', 'Door Config', 'Seating', 'Boot Vol.', 'Safety Rating']
     values = [50, 50, 75, 75, (selected_boot + 1) * 33, (selected_safety + 1) * 33]
     
@@ -76,7 +74,6 @@ def generate_prediction_chart(selected_safety, selected_boot):
     return fig
 
 def generate_trend_chart(df_history):
-    """Generates evaluation trends history graph."""
     score_mapping = {"Unacceptable (unacc)": 1, "Acceptable (acc)": 2, "Good (good)": 3, "Very Good (vgood)": 4}
     y_values = [score_mapping.get(d, 1) for d in df_history["Decision"]]
     x_values = df_history["Eval_ID"].tolist()
@@ -117,7 +114,7 @@ def create_kpi_card(title, value, subtitle, color="#0f172a"):
     """
 
 # ==========================================================
-# 3. Main Logic Controller
+# 3. Main Evaluation Function
 # ==========================================================
 def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     if any(v is None for v in [buying, maint, doors, persons, boot, safety]):
@@ -189,8 +186,12 @@ def process_evaluation(buying, maint, doors, persons, boot, safety, history_df):
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Ultra-Clean Showroom Modern CSS + Google Model Viewer JS
+# 4. Inject Google Model Viewer via Document Head
 # ==========================================================
+HEAD_JS = """
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+"""
+
 SHOWROOM_CSS = """
 :root {
     --bg-color: #f8fafc;
@@ -206,7 +207,6 @@ body, .gradio-container {
     color: var(--text-main) !important;
 }
 
-/* Header Navbar */
 .top-header {
     background: #ffffff;
     border: 1px solid var(--border-color);
@@ -224,9 +224,6 @@ body, .gradio-container {
     font-weight: 900;
     color: var(--text-main);
     letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .dev-badge {
@@ -239,7 +236,6 @@ body, .gradio-container {
     color: #334155;
 }
 
-/* Top KPI Stat Cards */
 .kpi-card {
     background: #ffffff;
     border: 1px solid var(--border-color);
@@ -268,7 +264,6 @@ body, .gradio-container {
     font-weight: 600;
 }
 
-/* Dashboard Panels */
 .dashboard-panel {
     background: #ffffff;
     border: 1px solid var(--border-color);
@@ -277,32 +272,29 @@ body, .gradio-container {
     box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-/* 3D Car Model Studio Container */
+/* Explicit styling so WebGL component renders full dimension */
 .car-3d-stage {
     position: relative;
     width: 100%;
-    height: 380px;
+    height: 420px;
     background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
     border-radius: 20px;
     border: 1px solid var(--border-color);
     overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 model-viewer {
-    width: 100%;
-    height: 100%;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
     --poster-color: transparent;
 }
 
-/* Floating HUD Callouts */
 .floating-callout {
     position: absolute;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     padding: 8px 14px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
@@ -317,7 +309,6 @@ model-viewer {
 .callout-tr { top: 20px; right: 20px; }
 .callout-br { bottom: 20px; right: 20px; }
 
-/* Primary Button */
 .btn-eval {
     background: #0f172a !important;
     color: #ffffff !important;
@@ -326,15 +317,12 @@ model-viewer {
     padding: 14px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2) !important;
-    transition: all 0.2s ease !important;
 }
 
 .btn-eval:hover {
     background: #1e293b !important;
-    transform: translateY(-1px);
 }
 
-/* Result Cards */
 .result-card {
     background: #f8fafc;
     border-radius: 14px;
@@ -363,23 +351,14 @@ model-viewer {
 }
 """
 
-# HTML block to load Google Model Viewer WebGL Web Component
-MODEL_VIEWER_SCRIPT = """
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-"""
-
 # ==========================================================
-# 5. Interface Layout
+# 5. Interface Construction
 # ==========================================================
-with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM_CSS) as demo:
+with gr.Blocks(title="Car Safety and Evaluation Prediction System", head=HEAD_JS, css=SHOWROOM_CSS) as demo:
     
-    # Load 3D WebGL Library
-    gr.HTML(MODEL_VIEWER_SCRIPT)
-    
-    # History State Variable
     history_state = gr.State(get_initial_history())
 
-    # Header Bar with Project Title & Developer Details
+    # Header Bar
     gr.HTML(
         """
         <div class="top-header">
@@ -393,35 +372,27 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
         """
     )
 
-    # Top Metric KPI Stat Cards
+    # Top KPI Cards
     with gr.Row():
         kpi_1 = gr.HTML(create_kpi_card("Total Evaluated", "4 Vehicles", "↗ Real-time Session", "#0f172a"))
         kpi_2 = gr.HTML(create_kpi_card("Safety Pass Rate", "75.0%", "↗ 3 Qualified", "#10b981"))
         kpi_3 = gr.HTML(create_kpi_card("High Safety Tier", "2 Units", "↗ High Rating", "#3b82f6"))
         kpi_4 = gr.HTML(create_kpi_card("Latest Evaluation", "Good", "Status: PASS", "#0f172a"))
 
-    # 3D VEHICLE SHOWROOM STAGE (Minimalist NIO / Porsche Style Visual)
+    # 3D Interactive Car Showroom Canvas
     with gr.Row():
         with gr.Column(elem_classes=["dashboard-panel"]):
-            gr.Markdown("### 🚙 **3D Vehicle Architecture Studio** (Interactive 360° Inspection)")
+            gr.Markdown("### 🚙 **3D Vehicle Architecture Studio** (360° Interactive Canvas)")
             gr.HTML(
                 """
                 <div class="car-3d-stage">
-                    <!-- Floating Architectural HUD Callouts -->
-                    <div class="floating-callout callout-tl">
-                        ⚡ Active Telemetry Pipeline
-                    </div>
-                    <div class="floating-callout callout-tr">
-                        🛡️ Safety Architecture Rated
-                    </div>
-                    <div class="floating-callout callout-br">
-                        🖱️ Drag to rotate 3D chassis
-                    </div>
+                    <div class="floating-callout callout-tl">⚡ Active Telemetry Pipeline</div>
+                    <div class="floating-callout callout-tr">🛡️ Safety Rated Architecture</div>
+                    <div class="floating-callout callout-br">🖱️ Click & Drag to Rotate 3D Model</div>
 
-                    <!-- 3D Interactive Car Model WebGL Canvas -->
                     <model-viewer 
-                        src="https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/ToyCar/glTF-Binary/ToyCar.glb"
-                        alt="3D Car Model"
+                        src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/ToyCar/glTF-Binary/ToyCar.glb"
+                        alt="3D Interactive Car Model"
                         auto-rotate 
                         camera-controls 
                         shadow-intensity="1.5"
@@ -433,10 +404,8 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
                 """
             )
 
-    # Middle Section: Input Parameters & Analytics Charts
+    # Controls & Analytics Charts
     with gr.Row():
-        
-        # Spec Input Console
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
             gr.Markdown("### 🎛️ **Vehicle Specifications Console**")
             
@@ -472,31 +441,22 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
 
             btn_eval = gr.Button("EVALUATE VEHICLE SAFETY ⚡", elem_classes=["btn-eval"])
 
-            # Result Box
             result_display = gr.HTML(
                 value="""
                 <div class="result-card">
                     <span style="color: #64748b; font-size: 0.8rem; font-weight: 700;">SYSTEM READY</span>
-                    <p style="margin: 4px 0 0 0; color: #334155; font-size: 0.88rem;">Select vehicle specifications above and click Evaluate to trigger assessment.</p>
+                    <p style="margin: 4px 0 0 0; color: #334155; font-size: 0.88rem;">Configure vehicle specifications above and click Evaluate.</p>
                 </div>
                 """
             )
 
-        # Radar Spec Breakdown Chart
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
-            spec_plot = gr.Plot(
-                value=generate_prediction_chart(2, 1), 
-                show_label=False
-            )
+            spec_plot = gr.Plot(value=generate_prediction_chart(2, 1), show_label=False)
 
-        # Telemetry Trend History Chart
         with gr.Column(scale=4, elem_classes=["dashboard-panel"]):
-            trend_plot = gr.Plot(
-                value=generate_trend_chart(get_initial_history()), 
-                show_label=False
-            )
+            trend_plot = gr.Plot(value=generate_trend_chart(get_initial_history()), show_label=False)
 
-    # Bottom Section: Real-time Evaluation History Table
+    # History Log Table
     with gr.Row():
         with gr.Column(elem_classes=["dashboard-panel"]):
             gr.Markdown("### 📋 **Real-Time Assessment Log History**")
@@ -508,38 +468,13 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
                 row_count=5
             )
 
-    # Event binding
     btn_eval.click(
         fn=process_evaluation,
-        inputs=[
-            buying_price,
-            maintenance_cost,
-            number_of_doors,
-            number_of_persons,
-            lug_boot,
-            safety,
-            history_state
-        ],
-        outputs=[
-            history_state,
-            history_table,
-            spec_plot,
-            trend_plot,
-            result_display,
-            kpi_1,
-            kpi_2,
-            kpi_3,
-            kpi_4
-        ]
+        inputs=[buying_price, maintenance_cost, number_of_doors, number_of_persons, lug_boot, safety, history_state],
+        outputs=[history_state, history_table, spec_plot, trend_plot, result_display, kpi_1, kpi_2, kpi_3, kpi_4]
     )
 
-# ==========================================================
-# 6. Deployment Launch Setup
-# ==========================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Launching 3D Showroom UI on port {port}...")
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=port
-    )
+    demo.launch(server_name="0.0.0.0", server_port=port)
