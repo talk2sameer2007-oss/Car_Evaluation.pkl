@@ -1,4 +1,5 @@
 import os
+import base64
 import joblib
 import pandas as pd
 from datetime import datetime
@@ -17,7 +18,6 @@ except Exception as e:
     print(f"⚠️ Model load note: {e}. Running in simulation fallback mode.")
     model = None
 
-# Input Category Mappings
 buying_map = {"low": 0, "med": 1, "high": 2, "vhigh": 3}
 maintenance_map = {"low": 0, "med": 1, "high": 2, "vhigh": 3}
 doors_map = {"2": 0, "3": 1, "4": 2, "5more": 3}
@@ -116,7 +116,6 @@ def create_kpi_card(title, value, subtitle, color="#3b82f6"):
 # 3. Prediction Handler Logic
 # ==========================================================
 def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_of_persons, lug_boot, safety, history_df):
-    
     input_data = pd.DataFrame({
         "buying price": [buying_map[buying_price]],
         "maintenance cost": [maintenance_map[maintenance_cost]],
@@ -188,7 +187,7 @@ def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_o
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Custom Styling & High-End Typography CSS
+# 4. Custom Styling & Base64 Encoded Iframe (Fixes Script Warning)
 # ==========================================================
 SHOWROOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
@@ -318,7 +317,6 @@ body, .gradio-container {
     font-weight: 800;
 }
 
-/* Dropdown & Form Customization */
 .gr-box, .gr-input, select, label {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
@@ -329,7 +327,6 @@ select, .gr-input {
     color: #f8fafc !important;
 }
 
-/* Dataframe Styling */
 .gr-dataframe {
     background: rgba(15, 23, 42, 0.6) !important;
     border-radius: 14px !important;
@@ -339,9 +336,7 @@ select, .gr-input {
 }
 """
 
-BMW_3D_IFRAME_HTML = """
-<iframe srcdoc='
-<!DOCTYPE html>
+_raw_iframe_content = """<!DOCTYPE html>
 <html>
 <head>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
@@ -365,9 +360,10 @@ BMW_3D_IFRAME_HTML = """
     interaction-prompt="none">
   </model-viewer>
 </body>
-</html>
-' style="width: 100%; height: 480px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;"></iframe>
-"""
+</html>"""
+
+_b64_iframe = base64.b64encode(_raw_iframe_content.encode('utf-8')).decode('utf-8')
+BMW_3D_IFRAME_HTML = f'<iframe src="data:text/html;base64,{_b64_iframe}" style="width: 100%; height: 480px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;"></iframe>'
 
 # ==========================================================
 # 5. Gradio Dashboard Construction
@@ -501,6 +497,7 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
     )
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 7860))
+    # Render binds dynamic port via os.environ["PORT"], defaulting to 10000 on Render
+    port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Launching Dashboard on port {port}...")
     demo.launch(server_name="0.0.0.0", server_port=port)
