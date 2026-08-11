@@ -8,12 +8,11 @@ import pandas as pd
 # LOAD HYBRID MODEL
 # =========================================================
 
-model = joblib.load("Car_Eva.pkl")
+model = joblib.load("Car_Evaluation_Hybrid.pkl")
 
 
 # =========================================================
-# MAPPINGS
-# These MUST match the mappings used during model training
+# SAME MAPPINGS USED DURING TRAINING
 # =========================================================
 
 buying_map = {
@@ -69,39 +68,29 @@ def predict_car(
     safety
 ):
 
-    # Convert categorical values into the same
-    # numerical values used during model training
-
     data = pd.DataFrame({
         "buying price": [
             buying_map[buying_price]
         ],
-
         "maintenance cost": [
             maintenance_map[maintenance_cost]
         ],
-
         "number of doors": [
             doors_map[number_of_doors]
         ],
-
         "number of persons": [
             persons_map[number_of_persons]
         ],
-
         "lug_boot": [
             lug_boot_map[lug_boot]
         ],
-
         "safety": [
             safety_map[safety]
         ]
     })
 
-    # Make prediction
     prediction = model.predict(data)[0]
 
-    # Convert numerical prediction back to class name
     result_map = {
         0: "UNACCEPTABLE",
         1: "ACCEPTABLE",
@@ -109,9 +98,7 @@ def predict_car(
         3: "VERY GOOD"
     }
 
-    result = result_map[int(prediction)]
-
-    return f"Car Evaluation: {result}"
+    return f"Car Evaluation: {result_map[int(prediction)]}"
 
 
 # =========================================================
@@ -129,14 +116,7 @@ with gr.Blocks(
         ### Hybrid Machine Learning Model
         **XGBoost + Random Forest**
 
-        Enter the car details below to predict its
-        overall evaluation.
-        """
-    )
-
-    gr.Markdown(
-        """
-        ### 📋 Car Information
+        Enter the car details below to predict its evaluation.
         """
     )
 
@@ -208,7 +188,7 @@ with gr.Blocks(
     gr.Markdown(
         """
         ---
-        ### 🤖 Model Information
+        ### Model Information
 
         **Algorithm:** Hybrid Ensemble  
         **Models:** XGBoost + Random Forest  
@@ -221,7 +201,7 @@ with gr.Blocks(
 
 
 # =========================================================
-# LAUNCH APPLICATION
+# LAUNCH
 # =========================================================
 
 if __name__ == "__main__":
