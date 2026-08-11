@@ -187,7 +187,7 @@ def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_o
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Custom Styling & Base64 Encoded Iframe (Fixes Script Warning)
+# 4. Custom Styling & Base64 Encoded Iframe (Title Badge Removed)
 # ==========================================================
 SHOWROOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
@@ -339,16 +339,15 @@ select, .gr-input {
 _raw_iframe_content = """<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%); font-family: "Plus Jakarta Sans", sans-serif; }
     model-viewer { width: 100%; height: 100%; }
-    .overlay-badge { position: absolute; top: 14px; left: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #38bdf8; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; backdrop-filter: blur(8px); z-index: 100; }
     .overlay-hint { position: absolute; bottom: 14px; right: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; backdrop-filter: blur(8px); z-index: 100; }
   </style>
 </head>
 <body>
-  <div class="overlay-badge">🏎️ BMW M4 Coupe — 360° Interactive Studio</div>
   <div class="overlay-hint">🖱️ Click & Drag to Rotate 3D Model</div>
   <model-viewer 
     src="https://cdn.jsdelivr.net/gh/fazil47/assets@master/3d/vehicles/bmw_m4_2021.glb" 
@@ -363,7 +362,7 @@ _raw_iframe_content = """<!DOCTYPE html>
 </html>"""
 
 _b64_iframe = base64.b64encode(_raw_iframe_content.encode('utf-8')).decode('utf-8')
-BMW_3D_IFRAME_HTML = f'<iframe src="data:text/html;base64,{_b64_iframe}" style="width: 100%; height: 480px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;"></iframe>'
+BMW_3D_IFRAME_HTML = f'<iframe src="data:text/html;charset=utf-8;base64,{_b64_iframe}" style="width: 100%; height: 480px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;"></iframe>'
 
 # ==========================================================
 # 5. Gradio Dashboard Construction
@@ -497,7 +496,6 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
     )
 
 if __name__ == "__main__":
-    # Render binds dynamic port via os.environ["PORT"], defaulting to 10000 on Render
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Launching Dashboard on port {port}...")
     demo.launch(server_name="0.0.0.0", server_port=port)
