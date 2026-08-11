@@ -60,14 +60,14 @@ def generate_prediction_chart(safety_val, boot_val):
     fig.update_layout(
         polar=dict(
             radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, linecolor='#334155'),
-            angularaxis=dict(tickfont=dict(size=10, color='#94a3b8'))
+            angularaxis=dict(tickfont=dict(size=10, color='#94a3b8', family='Plus Jakarta Sans'))
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=25, r=25, t=30, b=25),
         height=260,
         showlegend=False,
-        title=dict(text="<b>BMW Spec Assessment Radar</b>", font=dict(size=12, color="#f8fafc"))
+        title=dict(text="<b>BMW Spec Assessment Radar</b>", font=dict(size=12, color="#f8fafc", family='Plus Jakarta Sans'))
     )
     return fig
 
@@ -88,15 +88,16 @@ def generate_trend_chart(df_history):
     ))
 
     fig.update_layout(
-        title=dict(text="<b>Telemetry Assessment History</b>", font=dict(color="#f8fafc", size=12)),
+        title=dict(text="<b>Telemetry Assessment History</b>", font=dict(color="#f8fafc", size=12, family='Plus Jakarta Sans')),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=20, r=20, t=35, b=20),
         height=260,
-        xaxis=dict(showgrid=False, color='#64748b', tickfont=dict(size=10)),
+        xaxis=dict(showgrid=False, color='#64748b', tickfont=dict(size=10, family='Plus Jakarta Sans')),
         yaxis=dict(
             showgrid=True, gridcolor='#1e293b', color='#64748b',
-            tickvals=[1, 2, 3, 4], ticktext=['Unacc', 'Acc', 'Good', 'VGood']
+            tickvals=[1, 2, 3, 4], ticktext=['Unacc', 'Acc', 'Good', 'VGood'],
+            tickfont=dict(family='Plus Jakarta Sans')
         ),
         showlegend=False
     )
@@ -116,7 +117,6 @@ def create_kpi_card(title, value, subtitle, color="#3b82f6"):
 # ==========================================================
 def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_of_persons, lug_boot, safety, history_df):
     
-    # 1. Map input features to DataFrame structure expected by model
     input_data = pd.DataFrame({
         "buying price": [buying_map[buying_price]],
         "maintenance cost": [maintenance_map[maintenance_cost]],
@@ -126,14 +126,12 @@ def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_o
         "safety": [safety_map[safety]]
     })
 
-    # 2. Perform Prediction
     if model is not None:
         try:
             pred_class = int(model.predict(input_data)[0])
         except Exception:
             pred_class = 0 if safety_map[safety] == 0 else 1
     else:
-        # Fallback simulation logic if model file is missing
         if safety_map[safety] == 0 or persons_map[number_of_persons] == 0:
             pred_class = 0
         elif safety_map[safety] == 2 and buying_map[buying_price] <= 1 and maintenance_map[maintenance_cost] <= 1:
@@ -148,7 +146,6 @@ def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_o
     eval_id = f"EV-{1001 + len(history_df)}"
     time_str = datetime.now().strftime("%H:%M:%S")
 
-    # 3. Append to Evaluation History
     new_entry = {
         "Eval_ID": eval_id,
         "Time": time_str,
@@ -164,7 +161,6 @@ def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_o
 
     updated_df = pd.concat([pd.DataFrame([new_entry]), history_df], ignore_index=True)
 
-    # 4. Re-calculate Dashboard Metrics
     total_evals = len(updated_df)
     pass_cnt = len(updated_df[updated_df["Status"] == "PASS"])
     pass_rate = f"{(pass_cnt / total_evals) * 100:.1f}%"
@@ -192,9 +188,11 @@ def process_evaluation(buying_price, maintenance_cost, number_of_doors, number_o
     return updated_df, updated_df, spec_chart, trend_chart, result_html, kpi1, kpi2, kpi3, kpi4
 
 # ==========================================================
-# 4. Custom Styling & HTML Templates (Luxury Dark Theme)
+# 4. Custom Styling & High-End Typography CSS
 # ==========================================================
 SHOWROOM_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
 :root {
     --bg-color: #0b0f17;
     --card-bg: rgba(18, 24, 38, 0.75);
@@ -208,7 +206,7 @@ body, .gradio-container {
     background-image: 
         radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.12) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.12) 0px, transparent 50%) !important;
-    font-family: 'Inter', -apple-system, sans-serif !important;
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
     color: var(--text-main) !important;
 }
 
@@ -217,7 +215,7 @@ body, .gradio-container {
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 20px 30px;
+    padding: 22px 32px;
     margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
@@ -226,12 +224,14 @@ body, .gradio-container {
 }
 
 .main-title {
-    font-size: 1.4rem;
-    font-weight: 900;
-    background: linear-gradient(90deg, #60a5fa, #c084fc, #38bdf8);
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    background: linear-gradient(90deg, #38bdf8 0%, #a855f7 50%, #60a5fa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
+    text-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
 }
 
 .dev-badge {
@@ -242,6 +242,7 @@ body, .gradio-container {
     font-size: 0.85rem;
     font-weight: 600;
     color: #cbd5e1;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
 .kpi-card {
@@ -251,6 +252,7 @@ body, .gradio-container {
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
 .kpi-title {
@@ -287,10 +289,12 @@ body, .gradio-container {
     color: #ffffff !important;
     border-radius: 12px !important;
     font-weight: 800 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     padding: 14px !important;
     border: none !important;
     box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4) !important;
     transition: all 0.3s ease !important;
+    letter-spacing: 0.3px;
 }
 
 .btn-eval:hover {
@@ -304,6 +308,7 @@ body, .gradio-container {
     padding: 18px;
     margin-top: 15px;
     border: 1px solid var(--border-color);
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
 .badge {
@@ -314,7 +319,11 @@ body, .gradio-container {
 }
 
 /* Dropdown & Form Customization */
-.gr-box, .gr-input, select {
+.gr-box, .gr-input, select, label {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+select, .gr-input {
     background-color: rgba(15, 23, 42, 0.8) !important;
     border-color: var(--border-color) !important;
     color: #f8fafc !important;
@@ -326,6 +335,7 @@ body, .gradio-container {
     border-radius: 14px !important;
     border: 1px solid var(--border-color) !important;
     color: #f8fafc !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 """
 
@@ -336,7 +346,7 @@ BMW_3D_IFRAME_HTML = """
 <head>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%); font-family: sans-serif; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%); font-family: "Plus Jakarta Sans", sans-serif; }
     model-viewer { width: 100%; height: 100%; }
     .overlay-badge { position: absolute; top: 14px; left: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #38bdf8; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; backdrop-filter: blur(8px); z-index: 100; }
     .overlay-hint { position: absolute; bottom: 14px; right: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; backdrop-filter: blur(8px); z-index: 100; }
@@ -371,9 +381,9 @@ with gr.Blocks(title="Car Safety and Evaluation Prediction System", css=SHOWROOM
         """
         <div class="top-header">
             <div>
-                <div class="main-title">🚗 CAR SAFETY AND EVALUATION PREDICTION SYSTEM</div>
-                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">
-                    Hybrid Model: <b>XGBoost + Random Forest</b> (Soft Voting)
+                <div class="main-title">🚘 CAR SAFETY & EVALUATION PREDICTION SYSTEM</div>
+                <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 5px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                    Hybrid Model Intelligence: <b>XGBoost + Random Forest</b> (Soft Voting)
                 </div>
             </div>
             <div class="dev-badge">
