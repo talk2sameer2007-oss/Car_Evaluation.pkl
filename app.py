@@ -2,7 +2,7 @@ import gradio as gr
 import joblib
 import pandas as pd
 
-model = joblib.load("Car_Evaluation_Hybrid.pkl")
+model = joblib.load("Car_Eva.pkl")
 
 buying_map = {
     "low": 0,
@@ -170,4 +170,3 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=7860
     )
-```
