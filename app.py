@@ -33,7 +33,7 @@ RESULT_MAP = {
 }
 
 PRESETS = {
-    "Luxury Executive": ("vhigh", "high", "4", "4", "big", "high"),
+    "Luxury Executive": ("med", "med", "2", "4", "big", "high"),
     "Family Cruiser": ("med", "med", "4", "more", "big", "high"),
     "Budget Economy": ("low", "low", "4", "4", "med", "med"),
     "Unsafe Sport": ("high", "vhigh", "2", "2", "small", "low")
